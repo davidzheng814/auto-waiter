@@ -32,7 +32,7 @@ def get_menus(session_cookie, day):
     Get the menus available on day (Monday=0, etc)
     '''
     assert session_cookie
-    return [get_menu(menu_id) for menu_id in get_menu_ids(session_cookie, day)]
+    return [get_menu(metadata) for metadata in get_menu_metadata(session_cookie, day)]
 
 # Helpers
 
@@ -73,19 +73,24 @@ def extract_services(menu_page):
 
     return json.loads(json_string)
 
-def get_menu(menu_id):
+def get_menu(metadata):
     '''
     Get the menu (a dictionary) with the given menu_id
     '''
-    url = 'https://www.waiter.com/api/v1/menus/{}.json?wrap=1'.format(menu_id)
+    url = 'https://www.waiter.com/api/v1/menus/{}.json?wrap=1'.format(metadata['menu_id'])
     r = requests.get(url)
     if r.status_code != 200:
         raise Exception('GET {} failed'.format(url))
-    return r.json()
+    menu = r.json()
 
-def get_menu_ids(session_cookie, day):
+    # Additional data not provided by the Waiter API
+    menu['cuisine_types'] = metadata['cuisine_types']
+
+    return menu
+
+def get_menu_metadata(session_cookie, day):
     '''
-    Get the ids of the menus available on day (Monday=0, etc)
+    Get data used to retrieve the menus available on day (Monday=0, etc)
     '''
     assert session_cookie
 
@@ -104,7 +109,16 @@ def get_menu_ids(session_cookie, day):
     # then always add in salad spot
     not_salad_spot = [service for service in services if service['name'] != 'Salad Spot']
     salad_spot = [service for service in services if service['name'] == 'Salad Spot'][0]
-    ids = [service['menu_id'] for service in not_salad_spot][3*day:3*day + 3]
-    ids.append(salad_spot['menu_id'])
+    data = [extract_menu_metadata(service) for service in not_salad_spot][3*day:3*day + 3]
+    data.append(extract_menu_metadata(salad_spot))
 
-    return ids
+    return data
+
+def extract_menu_metadata(menu):
+    '''
+    Extract useful metadata from a JSON struct
+    '''
+    return {
+        'menu_id': menu['menu_id'],
+        'cuisine_types': menu['cuisine_types']
+    }
