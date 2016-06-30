@@ -24,12 +24,14 @@ def login(username, password):
     return session_cookie
 
 def add_item(session_cookie, item):
+    assert session_cookie
     r = requests.post('https://www.waiter.com/api/v1/cart_items.json', cookies=session_cookie, data=item)
 
 def get_menus(session_cookie, day):
     '''
     Get the menus available on day (Monday=0, etc)
     '''
+    assert session_cookie
     return [get_menu(menu_id) for menu_id in get_menu_ids(session_cookie, day)]
 
 # Helpers
@@ -85,6 +87,8 @@ def get_menu_ids(session_cookie, day):
     '''
     Get the ids of the menus available on day (Monday=0, etc)
     '''
+    assert session_cookie
+
     if day < 0 or day > 3:
         raise ValueError('day must be in the range [0, 4)')
 
