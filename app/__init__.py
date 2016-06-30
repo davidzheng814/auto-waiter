@@ -1,6 +1,5 @@
 """Initialize the app."""
 from flask import Flask, render_template
-from flask_sqlalchemy import SQLAlchemy
 
 APP = Flask(__name__)
 APP.config.from_object('config')
