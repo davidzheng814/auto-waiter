@@ -1,6 +1,6 @@
 import json
 import operator
-
+import sys
 cuisine_weight = 5
 meat_weight = 3
 veg_weight = 2
@@ -12,7 +12,8 @@ expand= { "seafood":["fish", "shrimp", "salmon", "tuna", "cod", "lobster", "crab
           "flowers":["cauliflower","broccoli"],
           "leaves":["kale","chard","spinach","lettuce","cabbage"],
           "milk":["cheese", "mozzarella", "paneer"],
-          "cheese":["mozzarella", "paneer"]
+          "cheese":["mozzarella", "paneer"],
+          "poultry":["chicken"]
           }
 
 
@@ -75,7 +76,6 @@ def parse_preference (preference_json, cuisine, meat, vegetable, allergy, favori
             cuisine.update( { k:cuisine[key] for k in expand[key] } )
 
 
-
 def pick_food(menu_json, preference_json):
     result = parse_json(menu_json)
     cuisine={}
@@ -133,7 +133,7 @@ def pick_food(menu_json, preference_json):
 
 f=open('examples/menus.json','r')
 x = f.read()
-file = open("data/preferences/dshao@purestorage.com.json","r")
+file = open(sys.argv[1],"r")
 y=file.read()
 return_id = pick_food(x, y)
 
