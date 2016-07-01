@@ -8,7 +8,7 @@ from subprocess import call
 from app import APP
 
 if getuser() == "root":
-    APP.run(debug=True, host="172.16.110.25", port=80)
+    APP.run(debug=False, host="172.31.11.17", port=80)
 else:
     APP.run(debug=True)
 

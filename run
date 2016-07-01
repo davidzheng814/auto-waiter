@@ -1,0 +1,2 @@
+#!/bin/sh
+sudo /home/ubuntu/auto-waiter/venv/bin/python /home/ubuntu/auto-waiter/run.py
