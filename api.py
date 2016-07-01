@@ -3,7 +3,7 @@ import requests
 import re
 import json
 from aw_exceptions import *
-from config import MENU_DIR
+from config import *
 
 PREVIOUS_MENUS = os.path.join(MENU_DIR, 'previous_menus{}.json')
 
@@ -59,9 +59,33 @@ def get_menus(session_cookie, day):
 
     return menus
 
+def load_prefs():
+    prefs = {}
+    for pref_file in os.listdir(PREF_DIR):
+        with open(os.path.join(PREF_DIR, pref_file), 'r') as f:
+            pref = json.loads(f.read())
+            prefs[pref['username']] = pref
+    return prefs
+
 def get_user_sessions():
-    # TODO return a list of session tokens for all users
-    pass
+    '''
+    Return a list of sessions for all users. A session is a dictionary with the following structure:
+    cookie: a session_cookie that grants access to Waiter.com endpoints
+    preferences: a dictionary of preferences used to choose an order for the user
+    '''
+    sessions = []
+    for username, pref in load_prefs():
+        sessions.append({
+            'cookie': login(username, pref['password']),
+            'preferences': pref['preferences']
+        })
+
+    return sessions
+
+def do_order(session, day_of_week, menus=None):
+    if menus is None:
+        menus = get_menus(session['cookie'], day_of_week)
+    # TODO select and order and make it
 
 # Helpers
 
