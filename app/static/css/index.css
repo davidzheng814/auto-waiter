@@ -1,0 +1,15 @@
+#main-form {
+    margin:20px auto;
+    width:500px;
+    height:500px;
+    padding:40px;
+}
+
+#banner {
+    margin:80px auto 0 auto;
+    text-align:center;
+}
+
+#submit-button {
+    margin-top:240px;
+}

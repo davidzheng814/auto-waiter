@@ -1,6 +1,9 @@
 [
     {
-      "updated": {
+      "cuisine_types": [
+        "Indian"
+    ]
+    , "updated": {
         "menus": [
           {
             "name": "celebrations"
@@ -3335,7 +3338,10 @@
     , "results": "9449"
   }
   , {
-      "updated": {
+      "cuisine_types": [
+        "Mediterranean"
+    ]
+    , "updated": {
         "menus": [
           {
             "name": "houseoffalafel"
@@ -4946,7 +4952,11 @@
     , "results": "9383"
   }
   , {
-      "updated": {
+      "cuisine_types": [
+        "Catering"
+      , "Italian"
+    ]
+    , "updated": {
         "menus": [
           {
             "name": "pastaqwd"
@@ -7407,7 +7417,11 @@
     , "results": "7425"
   }
   , {
-      "updated": {
+      "cuisine_types": [
+        "American"
+      , "Salads"
+    ]
+    , "updated": {
         "menus": [
           {
             "name": "saladspotsyncwdd"

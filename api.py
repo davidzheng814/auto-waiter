@@ -1,6 +1,11 @@
+import os
 import requests
 import re
 import json
+from aw_exceptions import *
+from config import MENU_DIR
+
+PREVIOUS_MENUS = os.path.join(MENU_DIR, 'previous_menus{}.json')
 
 def login(username, password):
     data = {
@@ -29,10 +34,34 @@ def add_item(session_cookie, item):
 
 def get_menus(session_cookie, day):
     '''
-    Get the menus available on day (Monday=0, etc)
+    Get the menus available on day (Monday=0, etc), or None if no menus available
     '''
     assert session_cookie
-    return [get_menu(menu_id) for menu_id in get_menu_ids(session_cookie, day)]
+
+    menus = []
+    try:
+        menus = [get_menu(metadata) for metadata in get_menu_metadata(session_cookie, day)]
+    except get_menu_error:
+        return None
+
+    try:
+        with open(PREVIOUS_MENUS.format(day), 'r') as f:
+            if menus == json.loads(f.read()):
+                # Menus the same, not yet updated
+                return None
+    except IOError:
+        # No previous menu file, continue as normal
+        pass
+
+    # Serialize the menus so that, next time, we can check if the menus have been updated
+    with open(PREVIOUS_MENUS.format(day), 'w') as f:
+        f.write(json.dumps(menus))
+
+    return menus
+
+def get_user_sessions():
+    # TODO return a list of session tokens for all users
+    pass
 
 # Helpers
 
@@ -73,29 +102,33 @@ def extract_services(menu_page):
 
     return json.loads(json_string)
 
-def get_menu(menu_id):
+def get_menu(metadata):
     '''
     Get the menu (a dictionary) with the given menu_id
     '''
-    url = 'https://www.waiter.com/api/v1/menus/{}.json?wrap=1'.format(menu_id)
+    url = 'https://www.waiter.com/api/v1/menus/{}.json?wrap=1'.format(metadata['menu_id'])
     r = requests.get(url)
     if r.status_code != 200:
-        raise Exception('GET {} failed'.format(url))
-    return r.json()
+        raise get_menu_error('GET {} failed'.format(url))
+    menu = r.json()
 
-def get_menu_ids(session_cookie, day):
+    # Additional data not provided by the Waiter API
+    menu['cuisine_types'] = metadata['cuisine_types']
+
+    return menu
+
+def get_menu_metadata(session_cookie, day):
     '''
-    Get the ids of the menus available on day (Monday=0, etc)
+    Get data used to retrieve the menus available on day (Monday=0, etc)
     '''
     assert session_cookie
-
-    if day < 0 or day > 3:
-        raise ValueError('day must be in the range [0, 4)')
+    assert day >= 0 and day < 4
 
     menu_page_url = 'https://www.waiter.com/vcs/purestorage-dinner'
     menu_page = requests.get(menu_page_url, cookies=session_cookie)
     if menu_page.status_code != 200:
-        raise Exception('GET %s failed: %d', menu_page_url, menu_page.status_code)
+        raise get_menu_error(
+            'GET {url} failed: {status}'.format(url=menu_page_url, status=menu_page.status_code))
 
     # A list of all vendors for the week
     services = extract_services(menu_page.text)
@@ -104,7 +137,16 @@ def get_menu_ids(session_cookie, day):
     # then always add in salad spot
     not_salad_spot = [service for service in services if service['name'] != 'Salad Spot']
     salad_spot = [service for service in services if service['name'] == 'Salad Spot'][0]
-    ids = [service['menu_id'] for service in not_salad_spot][3*day:3*day + 3]
-    ids.append(salad_spot['menu_id'])
+    data = [extract_menu_metadata(service) for service in not_salad_spot][3*day:3*day + 3]
+    data.append(extract_menu_metadata(salad_spot))
 
-    return ids
+    return data
+
+def extract_menu_metadata(menu):
+    '''
+    Extract useful metadata from a JSON struct
+    '''
+    return {
+        'menu_id': menu['menu_id'],
+        'cuisine_types': menu['cuisine_types']
+    }
