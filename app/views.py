@@ -6,6 +6,7 @@ import json
 from collections import OrderedDict
 
 from config import PREF_DIR
+from api import *
 
 MAIN_BLUEPRINT = Blueprint('main', __name__)
 
@@ -47,12 +48,6 @@ def parse_pref(pref):
             'scores': scores
         }
     }
-
-def load_prefs():
-    for file in os.listdir(PREF_DIR):
-        with open(os.path.join(PREF_DIR, file), 'r') as f:
-            pref = json.loads(f.read())
-            prefs[pref['username']] = pref
 
 class Preferences(Resource):
     post_parser = reqparse.RequestParser()
