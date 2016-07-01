@@ -1,1 +1,1 @@
-54 * * * * /home/jbearer/Documents/auto-waiter/run_daemon.py
+31 * * * * /home/jbearer/Documents/auto-waiter/run_daemon.py 2> /home/jbearer/Documents/auto-waiter/auto_waiter_err.log

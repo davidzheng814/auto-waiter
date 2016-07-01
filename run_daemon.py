@@ -4,8 +4,8 @@ from time import sleep
 from api import *
 from util import *
 
-RETRY_INTERVAL = 30
-MAX_ATTEMPTS = 10
+RETRY_INTERVAL = 1
+MAX_ATTEMPTS = 5
 
 def do_orders(attempts=0):
     log('Daemon: starting task "do_orders"')

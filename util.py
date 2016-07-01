@@ -13,9 +13,12 @@ def guarantee_existence(dirs):
             os.makedirs(dirname)
 
 _LOG_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'auto_waiter.log')
-_LOG = open(_LOG_FILE, 'w')
+_LOG = open(_LOG_FILE, 'a')
 def log(message):
-    _LOG.write(message + '\n')
+    today = datetime.today()
+    timestamp = '{y:04d}-{mo:02d}-{d:02d} {h}:{m:02d}:{s:02d}'.format(
+        y=today.year, mo=today.month, d=today.day, h=today.hour, m=today.minute, s=today.second)
+    _LOG.write('{time} {message}\n'.format(time=timestamp, message=message))
 
 # Exceptions
 
