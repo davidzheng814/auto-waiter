@@ -110,7 +110,7 @@ def pick_food(menu_json, preference_json):
                                 continue
                      '''
                         if "price" in food:
-                            if food["price"] <= 8:
+                            if food["price"] <= 8 or food["price"] > 18:
                                 continue
                         score = 0
                         if "description" in food:
