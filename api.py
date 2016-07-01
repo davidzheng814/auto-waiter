@@ -116,7 +116,7 @@ def do_order(session, day_of_week, menus):
     item = {
         'cart_id': cart_id,
         'menu_item_id': order_id,
-        'menu_item_option_choice_ids': 5862793, # TODO what is this?
+        #'menu_item_option_choice_ids': 5862793, TODO what is this?
         'quantity': 1
     }
 
