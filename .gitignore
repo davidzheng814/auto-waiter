@@ -4,4 +4,4 @@ venv/
 
 celerybeat-schedule
 
-previous_menus*.json
+data/*

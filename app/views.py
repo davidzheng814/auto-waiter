@@ -4,9 +4,9 @@ from flask_restful import Resource, Api, reqparse
 import os
 import json
 
-MAIN_BLUEPRINT = Blueprint('main', __name__)
+from config import PREF_DIR
 
-PREF_DIR = '/tmp/preferences/'
+MAIN_BLUEPRINT = Blueprint('main', __name__)
 
 @MAIN_BLUEPRINT.route('/')
 def index():

@@ -1,9 +1,11 @@
+import os
 import requests
 import re
 import json
 from aw_exceptions import *
+from config import MENU_DIR
 
-PREVIOUS_MENUS = 'previous_menus{}.json'
+PREVIOUS_MENUS = os.path.join(MENU_DIR, 'previous_menus{}.json')
 
 def login(username, password):
     data = {
