@@ -3,8 +3,16 @@ $(document).ready(function() {
         var pref = {}
         pref.username = $('#username').val()
         pref.password = $('#password').val()
-        pref.preference = $('#preference').val()
+        pref.restrictions = $('#restrict').val()
+        pref.favorites = $('#favorites').val()
+        pref.scores = []
 
+        $('.slider').each(function(){
+            pref.scores.push($(this).attr('item') + '-' + $(this).val());
+        });
+
+        pref.scores = pref.scores.join();
+        console.log(pref);
         URL = "api/preferences/"
         $.post(URL, pref, function(result) {
             if (result) {
@@ -27,7 +35,12 @@ $(document).ready(function() {
             }
             $.get(URL, data, function(result) {
                 if(result) {
-                    $('#preference').val(result.preference)
+                    $('#favorites').val(result.favorites.join(', '))
+                    $('#restrict').val(result.restrictions.join(', '))
+                    $('.slider').each(function() {
+                        var tokens = $(this).attr('item').split('-');
+                        $(this).val(result.scores[tokens[0]][tokens[1]]);
+                    })
                 }
             })
         }

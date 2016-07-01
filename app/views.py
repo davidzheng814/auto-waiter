@@ -3,14 +3,20 @@ from flask import Blueprint, render_template
 from flask_restful import Resource, Api, reqparse
 import os
 import json
+from collections import OrderedDict
 
 from config import PREF_DIR
 
 MAIN_BLUEPRINT = Blueprint('main', __name__)
 
+FOOD_SECTIONS = OrderedDict()
+FOOD_SECTIONS['cuisines'] = ['indian', 'mediterranean', 'italian', 'american', 'mexican', 'asian']
+FOOD_SECTIONS['meats'] = ['pork', 'beef', 'lamb', 'poultry', 'seafood']
+FOOD_SECTIONS['vegetables'] = ['leaves', 'beans', 'flowers', 'roots']
+
 @MAIN_BLUEPRINT.route('/')
 def index():
-    return render_template("index.html")
+    return render_template("index.html", sections=FOOD_SECTIONS)
 
 @MAIN_BLUEPRINT.route('/thanks/')
 def thanks():
@@ -21,8 +27,26 @@ PERF_API = Api(API_BLUEPRINT)
 
 prefs = {}
 
-def is_valid(pref):
-    return True
+def parse_pref(pref):
+    if not pref['username'] or not pref['password']:
+        return False
+
+    restrictions = [x.strip().lower() for x in pref['restrictions'].split(',') if x]
+    favorites = [x.strip().lower() for x in pref['favorites'].split(',') if x]
+    scores = {}
+    for score in pref['scores'].split(','):
+        tokens = score.split('-')
+        scores.setdefault(tokens[0], {})[tokens[1]] = int(tokens[2])
+
+    return {
+        'username': pref['username'],
+        'password': pref['password'],
+        'preferences': {
+            'favorites': favorites,
+            'restrictions': restrictions,
+            'scores': scores
+        }
+    }
 
 def load_prefs():
     for file in os.listdir(PREF_DIR):
@@ -31,20 +55,21 @@ def load_prefs():
             prefs[pref['username']] = pref
 
 class Preferences(Resource):
-    """Returns a list of subtable names for perf_report."""
     post_parser = reqparse.RequestParser()
     post_parser.add_argument('username', required=True)
     post_parser.add_argument('password', required=True)
-    post_parser.add_argument('preference', required=True)
+    post_parser.add_argument('restrictions', required=True)
+    post_parser.add_argument('favorites', required=True)
+    post_parser.add_argument('scores', required=True)
     def post(self):
         pref = Preferences.post_parser.parse_args()
 
-        if is_valid(pref):
+        pref = parse_pref(pref)
+        if pref:
             prefs[pref['username']] = pref
             with open(os.path.join(PREF_DIR, pref['username'] + '.json'), 'w') as f:
                 text = json.dumps(pref, sort_keys=True, indent=4, separators=(',', ': '))
                 f.write(text)
-
             return True
 
         return False
@@ -66,7 +91,7 @@ class Preferences(Resource):
         if pref['password'] != password:
             return False
 
-        return pref
+        return pref['preferences']
 
 load_prefs()
 

@@ -8,6 +8,23 @@
     <link rel="icon" href="/static/images/favicon.ico" type="image/x-icon" />
   </head>
   <body>
+    <datalist id="steplist">
+        <option>1</option>
+        <option>2</option>
+        <option>3</option>
+        <option>4</option>
+        <option>5</option>
+        <option>6</option>
+        <option>7</option>
+        <option>8</option>
+        <option>9</option>
+        <option>10</option>
+        <option>11</option>
+        <option>12</option>
+        <option>13</option>
+        <option>14</option>
+        <option>15</option>
+    </datalist>
     <div id="content">
       <div id="banner">
         <h1 class="ui header">Auto Waiter</h1>
@@ -20,8 +37,28 @@
           <input type="password" placeholder="Password" id="password">
         </div>
         <div class="field">
-          <input type="text" placeholder="preference" id="preference">
+          <input type="text" placeholder="Allergies/Dietary Restrictions (e.g. peanuts, milk)" id="restrict">
         </div>
+        <div class="field">
+          <input type="text" placeholder="Favorite Dishes (e.g. Eggplant Parmesan, Chicken Tikka Masala)" id="favorites">
+        </div>
+        {% for section in sections %}
+          <h3 class="section-header">{{section.capitalize()}}</h3>
+          {% for item in sections[section] %}
+            <div class="field score-group">
+              <h4 class="ui header">{{item.capitalize()}}:</h4>
+              <div class="slider-container">
+                <input type="range" min="1" max="15" step="1" list="steplist" defaultValue="8" class="slider"
+                       item="{{section}}-{{item}}">
+              </div>
+              <div class="slider-labels">
+                  <div>Hate</div>
+                  <div>Neutral</div>
+                  <div>Love</div>
+                </div>
+            </div>
+          {% endfor %}
+        {% endfor %}
         <button type="submit" class="ui button" id="submit-button">Submit</button>
       </form>
     </div>
