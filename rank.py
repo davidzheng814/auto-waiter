@@ -39,7 +39,7 @@ def calculate_score_for_item(item, meat, vegetable, allergy, favorite):
     return score_m + score_v + score_f
 
 def parse_preference (preference_json, cuisine, meat, vegetable, allergy, favorites):
-    allergy.extend( preference_json["preferences"]["restrictions"])
+    allergy.extend( preference_json["restrictions"])
     for key, val in expand.iteritems():
         if key in allergy:
             allergy.extend(val)
@@ -47,23 +47,23 @@ def parse_preference (preference_json, cuisine, meat, vegetable, allergy, favori
     for key in allergy:
         print key
 
-    favorites.extend(preference_json["preferences"]["favorites"])
+    favorites.extend(preference_json["favorites"])
     for key, val in expand.iteritems():
         if key in favorites:
             favorites.extend(val)
 
-    meat.update(preference_json["preferences"]["scores"]["meats"])
+    meat.update(preference_json["scores"]["meats"])
     for key, val in expand.iteritems():
         if key in meat:
             meat.update( { k:meat[key] for k in expand[key] } )
 
 
-    vegetable.update(preference_json["preferences"]["scores"]["vegetables"])
+    vegetable.update(preference_json["scores"]["vegetables"])
     for key, val in expand.iteritems():
         if key in vegetable:
             vegetable.update( { k:vegetable[key] for k in expand[key] } )
 
-    cuisine.update(preference_json["preferences"]["scores"]["cuisines"])
+    cuisine.update(preference_json["scores"]["cuisines"])
     for key, val in expand.iteritems():
         if key in cuisine:
             cuisine.update( { k:cuisine[key] for k in expand[key] } )
