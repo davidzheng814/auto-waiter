@@ -26,7 +26,7 @@ def thanks():
 API_BLUEPRINT = Blueprint("api", __name__, url_prefix="/api")
 PERF_API = Api(API_BLUEPRINT)
 
-prefs = {}
+prefs = load_prefs()
 
 def parse_pref(pref):
     if not pref['username'] or not pref['password']:
@@ -99,7 +99,5 @@ class Preferences(Resource):
             return False
 
         return pref['preferences']
-
-load_prefs()
 
 PERF_API.add_resource(Preferences, '/preferences/')
