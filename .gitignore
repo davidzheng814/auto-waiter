@@ -5,3 +5,7 @@ venv/
 celerybeat-schedule
 
 data/*
+
+celerybeat-schedule.db
+celerybeat.pid
+celeryd.pid
