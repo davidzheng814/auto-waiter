@@ -3,7 +3,7 @@ import re
 import json
 from aw_exceptions import *
 
-PREVIOUS_MENUS = 'previous_menus.json'
+PREVIOUS_MENUS = 'previous_menus{}.json'
 
 def login(username, password):
     data = {
@@ -43,7 +43,7 @@ def get_menus(session_cookie, day):
         return None
 
     try:
-        with open(PREVIOUS_MENUS, 'r') as f:
+        with open(PREVIOUS_MENUS.format(day), 'r') as f:
             if menus == json.loads(f.read()):
                 # Menus the same, not yet updated
                 return None
@@ -52,7 +52,7 @@ def get_menus(session_cookie, day):
         pass
 
     # Serialize the menus so that, next time, we can check if the menus have been updated
-    with open(PREVIOUS_MENUS, 'w') as f:
+    with open(PREVIOUS_MENUS.format(day), 'w') as f:
         f.write(json.dumps(menus))
 
     return menus
