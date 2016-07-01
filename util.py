@@ -11,10 +11,9 @@ def guarantee_existence(dirs):
             os.makedirs(dirname)
 
 _LOG_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'auto_waiter.log')
+_LOG = open(_LOG_FILE, 'w')
 def log(message):
-    print message
-    with open(_LOG_FILE, 'w+') as f:
-        f.write(message)
+    _LOG.write(message + '\n')
 
 # Exceptions
 

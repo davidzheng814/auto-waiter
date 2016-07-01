@@ -15,7 +15,7 @@ def do_orders(attempts=0):
 
     menus = {}
     for session in get_user_sessions():
-        for day_of_week in range(4):
+        for day_of_week in range(get_day_of_week(), 4):
             # We store menus in a dictionary so we only have to get them for the first user
             if day_of_week not in menus:
                 log('Getting menus for batch order')

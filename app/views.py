@@ -65,6 +65,18 @@ class Preferences(Resource):
             with open(os.path.join(PREF_DIR, pref['username'] + '.json'), 'w') as f:
                 text = json.dumps(pref, sort_keys=True, indent=4, separators=(',', ': '))
                 f.write(text)
+
+            session = {
+                'cookie': login(pref['username'], pref['password']),
+                'preferences': pref['preferences'],
+                'username': pref['username']
+            }
+
+            log('Registered new preferences for user {}'.format(pref['username']))
+            for day_of_week in range(get_day_of_week(), 4):
+                menus = get_menus(session['cookie'], day_of_week, force=True)
+                do_order(session, day_of_week, menus)
+
             return True
 
         return False

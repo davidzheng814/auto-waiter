@@ -1,6 +1,7 @@
 import os
 import requests
 import json
+from datetime import datetime
 from config import *
 from util import *
 
@@ -31,9 +32,10 @@ def add_item(session_cookie, item):
     assert session_cookie
     r = requests.post('https://www.waiter.com/api/v1/cart_items.json', cookies=session_cookie, data=item)
 
-def get_menus(session_cookie, day):
+def get_menus(session_cookie, day, force=False):
     '''
     Get the menus available on day (Monday=0, etc), or None if no menus available
+    If force, get menus even if menus not yet update
     '''
     assert session_cookie
 
@@ -43,6 +45,11 @@ def get_menus(session_cookie, day):
     except get_menu_error:
         log('Error getting menus from Waiter.com')
         return None
+
+    if force:
+        # Ignore menu update status
+        log('Force menus requested, ignoring previous menus')
+        return menus
 
     # Check if menus have been updated
     menu_file = PREVIOUS_MENUS.format(day)
@@ -81,13 +88,18 @@ def get_user_sessions():
     for username, pref in load_prefs().items():
         sessions.append({
             'cookie': login(username, pref['password']),
-            'preferences': pref['preferences']
+            'preferences': pref['preferences'],
+            'username': username
         })
 
     return sessions
 
-def do_order(session, day_of_week, menus=None):
-    log('Preparing order for day {day}'.format(day=day_of_week))
-    if menus is None:
-        menus = get_menus(session['cookie'], day_of_week)
+def do_order(session, day_of_week, menus):
+    '''
+    If force, submit a new order for a user even if the menus have not been updated
+    '''
+    log('Preparing order for {user}, day {day}'.format(user=session['username'], day=day_of_week))
     # TODO select and order and make it
+
+def get_day_of_week():
+    return datetime.today().weekday()
