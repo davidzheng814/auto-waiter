@@ -95,6 +95,7 @@ def pick_food(menu_json, preference_json):
         final_options={}
         for restaurant in menu:
             sections = restaurant['updated']["menus"][0]["sections"]
+            restaurant_id = restaurant['updated']["menus"][0]["id"]
             base_score = 0
             restaurant_des = " ".join(restaurant['cuisine_types']).lower()
             for key, val in cuisine.iteritems():
@@ -118,7 +119,7 @@ def pick_food(menu_json, preference_json):
                         else:
                             score=calculate_score_for_item(food["name"], meat, vegetable, allergy, favorites)+base_score
 
-                        final_options[food["name"]]=(score, food)
+                        final_options[food["name"]]=(score, food, restaurant_id)
 
         b = final_options.items()
         b.sort(key = lambda x : x[1][0], reverse=True)
@@ -128,16 +129,17 @@ def pick_food(menu_json, preference_json):
         index = top[randint(0, len(top)-1)]
         r={}
         if "options" in index[1][1]:
-            r = { "id": index[1][1]["id"], "option_id" : ','.join([item["choices"][0]["id"] for item in index[1][1]["options"]]) }
+            r = { "id": index[1][1]["id"], "option_id" : ','.join([item["choices"][0]["id"] for item in index[1][1]["options"]]), "restaurant_id":index[1][2] }
         else:
-            r={"id":index[1][1]["id"], "option_id" : ""}
+            r={"id":index[1][1]["id"], "option_id" : "", "restaurant_id":index[1][2]}
         id_list.append(r)
         if "description" in index[1][1]:
             final_result.append(index[1][1]["name"]+" "+index[1][1]["description"])
         else:
             final_result.append(index[1][1]["name"])
 
-    print (final_result)
+    print (id_list)
+    print(final_result)
     return id_list
 
 if __name__ == '__main__':
