@@ -14,7 +14,12 @@ def do_orders(attempts=0):
         raise get_menu_error('Exceeded maximum retries')
 
     menus = {}
-    for session in get_user_sessions():
+    sessions = get_user_sessions()
+    if not sessions:
+        log('No users detected. Exiting.')
+        return
+
+    for session in sessions:
         for day_of_week in range(get_day_of_week(), 4):
             # We store menus in a dictionary so we only have to get them for the first user
             if day_of_week not in menus:
