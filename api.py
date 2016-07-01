@@ -1,6 +1,9 @@
 import requests
 import re
 import json
+from aw_exceptions import *
+
+PREVIOUS_MENUS = 'previous_menus.json'
 
 def login(username, password):
     data = {
@@ -29,10 +32,34 @@ def add_item(session_cookie, item):
 
 def get_menus(session_cookie, day):
     '''
-    Get the menus available on day (Monday=0, etc)
+    Get the menus available on day (Monday=0, etc), or None if no menus available
     '''
     assert session_cookie
-    return [get_menu(metadata) for metadata in get_menu_metadata(session_cookie, day)]
+
+    menus = []
+    try:
+        menus = [get_menu(metadata) for metadata in get_menu_metadata(session_cookie, day)]
+    except get_menu_error:
+        return None
+
+    try:
+        with open(PREVIOUS_MENUS, 'r') as f:
+            if menus == json.loads(f.read()):
+                # Menus the same, not yet updated
+                return None
+    except IOError:
+        # No previous menu file, continue as normal
+        pass
+
+    # Serialize the menus so that, next time, we can check if the menus have been updated
+    with open(PREVIOUS_MENUS, 'w') as f:
+        f.write(json.dumps(menus))
+
+    return menus
+
+def get_user_sessions():
+    # TODO return a list of session tokens for all users
+    pass
 
 # Helpers
 
@@ -80,7 +107,7 @@ def get_menu(metadata):
     url = 'https://www.waiter.com/api/v1/menus/{}.json?wrap=1'.format(metadata['menu_id'])
     r = requests.get(url)
     if r.status_code != 200:
-        raise Exception('GET {} failed'.format(url))
+        raise get_menu_error('GET {} failed'.format(url))
     menu = r.json()
 
     # Additional data not provided by the Waiter API
@@ -100,7 +127,7 @@ def get_menu_metadata(session_cookie, day):
     menu_page_url = 'https://www.waiter.com/vcs/purestorage-dinner'
     menu_page = requests.get(menu_page_url, cookies=session_cookie)
     if menu_page.status_code != 200:
-        raise Exception('GET %s failed: %d', menu_page_url, menu_page.status_code)
+        raise get_menu_error('GET %s failed: %d', menu_page_url, menu_page.status_code)
 
     # A list of all vendors for the week
     services = extract_services(menu_page.text)

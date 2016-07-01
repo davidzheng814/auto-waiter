@@ -3,3 +3,5 @@ venv/
 *.pyc
 
 celerybeat-schedule
+
+previous_menus.json
