@@ -2,6 +2,7 @@
 
 import os
 from celery.schedules import crontab
+from util import *
 
 _BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -9,9 +10,7 @@ _BASEDIR = os.path.abspath(os.path.dirname(__file__))
 DATA_DIR = os.path.join(_BASEDIR, 'data')
 PREF_DIR = os.path.join(DATA_DIR, 'preferences') # User preferences
 MENU_DIR = os.path.join(DATA_DIR, 'menus')       # Cached menus
-os.makedirs(DATA_DIR)
-os.makedirs(PREF_DIR)
-os.makedirs(MENU_DIR)
+guarantee_existence([DATA_DIR, PREF_DIR, MENU_DIR])
 
 DEBUG = True
 
