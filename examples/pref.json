@@ -1,5 +1,33 @@
 {
     "password": "bye",
-    "preference": "test",
-    "username": "hi"
+    "preferences": {
+        "favorites": [
+            "pasta"
+        ],
+        "restrictions": [],
+        "scores": {
+            "cuisines": {
+                "american": 8,
+                "asian": 8,
+                "indian": 8,
+                "italian": 8,
+                "mediterranean": 8,
+                "mexican": 8
+            },
+            "meats": {
+                "beef": 8,
+                "lamb": 8,
+                "pork": 8,
+                "poultry": 8,
+                "seafood": 8
+            },
+            "vegetables": {
+                "beans": 15,
+                "flowers": 8,
+                "leaves": 8,
+                "roots": 8
+            }
+        }
+    },
+    "username": "example"
 }
