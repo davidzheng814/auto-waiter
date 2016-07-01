@@ -1,0 +1,9 @@
+// find location, given restaurant name from menus.json
+// restaurant_search.json
+https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=37.388009,-122.083157&radius=15000&type=restaurant&name=houseoffalafel&key=AIzaSyCZshO4gyP5g3brwdmb-4OQ9R3WOK7d2Ng
+// adjust radius until one result probably
+
+
+// restaurant_details.json
+// using the place_id from restaurant_search.json
+https://maps.googleapis.com/maps/api/place/details/json?placeid=ChIJ50U9hJ-1j4AR47TWB8Q7nOc&key=AIzaSyCZshO4gyP5g3brwdmb-4OQ9R3WOK7d2Ng
