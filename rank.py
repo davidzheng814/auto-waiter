@@ -132,7 +132,10 @@ def pick_food(menu_json, preference_json):
         else:
             r={"id":index[1][1]["id"], "option_id" : ""}
         id_list.append(r)
-        final_result.append(index[1][1]["name"]+" "+index[1][1]["description"])
+        if "description" in index[1][1]:
+            final_result.append(index[1][1]["name"]+" "+index[1][1]["description"])
+        else:
+            final_result.append(index[1][1]["name"])
 
     print (final_result)
     return id_list
