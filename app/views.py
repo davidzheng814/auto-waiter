@@ -13,7 +13,7 @@ MAIN_BLUEPRINT = Blueprint('main', __name__)
 FOOD_SECTIONS = OrderedDict()
 FOOD_SECTIONS['cuisines'] = ['indian', 'mediterranean', 'italian', 'american', 'mexican', 'asian']
 FOOD_SECTIONS['meats'] = ['pork', 'beef', 'lamb', 'poultry', 'seafood']
-FOOD_SECTIONS['vegetables'] = ['leaves', 'beans', 'flowers', 'roots']
+FOOD_SECTIONS['vegetables'] = ['leaves (eg spinach)', 'beans (eg green beans)', 'flowers (eg broccoli)', 'roots (eg potato)']
 
 @MAIN_BLUEPRINT.route('/')
 def index():
