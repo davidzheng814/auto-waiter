@@ -4,6 +4,7 @@ import json
 from datetime import datetime
 from config import *
 from util import *
+from rank import pick_food
 
 PREVIOUS_MENUS = os.path.join(MENU_DIR, 'previous_menus{}.json')
 
@@ -70,6 +71,11 @@ def get_menus(session_cookie, day, force=False):
 
     return menus
 
+def get_cart_ids(session_cookie, day):
+    menu_page = get_menu_page(session_cookie, day)
+    all_ids = json.loads(try_get_pattern(r'var cartIds = (\[[0-9,]*\])', menu_page, group=1))
+    return sorted(all_ids)[day*4:day*4 + 4]
+
 def load_prefs():
     prefs = {}
     for pref_file in os.listdir(PREF_DIR):
@@ -99,7 +105,22 @@ def do_order(session, day_of_week, menus):
     If force, submit a new order for a user even if the menus have not been updated
     '''
     log('Preparing order for {user}, day {day}'.format(user=session['username'], day=day_of_week))
-    # TODO select and order and make it
+
+    order_id = pick_food(menus, session['preferences'])
+
+    # TODO: Each day has 4 cart IDs. We arbitrarily add the order to the first one. This will need
+    # to be tested, and if it doesn't work, we'll have to find out which cart ID goes with which
+    # restaurant
+    cart_id = get_cart_ids(session['cookie'], day_of_week)[0]
+
+    item = {
+        'cart_id': cart_id,
+        'menu_item_id': order_id,
+        'menu_item_option_choice_ids': 5862793, # TODO what is this?
+        'quantity': 1
+    }
+
+    add_item(session['cookie'], item)
 
 def get_day_of_week():
     return datetime.today().weekday()

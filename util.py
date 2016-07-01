@@ -1,6 +1,8 @@
 import os
 import requests
 import json
+from datetime import datetime
+import re
 
 def guarantee_existence(dirs):
     '''
@@ -25,6 +27,50 @@ class get_menu_error(Exception):
 
 # API helpers
 
+def try_get_pattern(pattern, source, group=0):
+    '''
+    Try matching a pattern against Waiter.com source code and returning a group. Using this
+    function means the pattern is believed to be a match, and if the match fails then Waiter.com
+    must have changed their source.
+    '''
+    match = _try_get_pattern(pattern, source)
+    return match.group(group)
+
+def try_get_pattern_index(pattern, source, end=False, group=0):
+    '''
+    Same as above, but returns the start index of the matched group. (If end, then the end index
+    if returned instead)
+    '''
+    match = _try_get_pattern(pattern, source)
+    if end:
+        return match.end(group)
+    else:
+        return match.start(group)
+
+def _try_get_pattern(pattern, source):
+    match = re.search(pattern, source)
+    if match is None:
+        raise Exception('/vcs/purestorage-dinner format has changed')
+    return match
+
+def get_menu_page(session_cookie, day=datetime.today(), cached_pages = {}):
+    '''
+    Memoized function to get the purestorage vcs html page. Requests the page from the Waiter
+    server at most once per day
+    '''
+    if day not in cached_pages:
+        menu_page_url = 'https://www.waiter.com/vcs/purestorage-dinner'
+
+        log('GET {url}'.format(url=menu_page_url))
+        menu_page = requests.get(menu_page_url, cookies=session_cookie)
+        if menu_page.status_code != 200:
+            raise get_menu_error(
+                'GET {url} failed: {status}'.format(url=menu_page_url, status=menu_page.status_code))
+
+        cached_pages[day] = menu_page.text
+
+    return cached_pages[day]
+
 def extract_services(menu_page):
     '''
     Somewhere in the page loaded by waiter.com is an API call that takes a JSON struct containing
@@ -34,15 +80,8 @@ def extract_services(menu_page):
 
     # Function call that indicates our JSON struct is coming.
     # If this string changes, our app breaks. Oh well.
-    indicator_function = 'WaiterApp.Models.services.addMissing('
-    start = menu_page.find(indicator_function)
-    if start == -1:
-        raise Exception('/vcs/purestorage-dinner format has changed')
-
-    # Move to the start of the JSON struct
-    index = start + len(indicator_function)
-    if menu_page[index] != '[':
-        raise Exception('/vcs/purestorage-dinner format has changed')
+    indicator_function = r'(WaiterApp\.Models\.services\.addMissing\()\['
+    index = try_get_pattern_index(indicator_function, menu_page, end=True, group=1)
 
     # Get the JSON list. Just bracket matching
     json_string = ''
@@ -67,9 +106,12 @@ def get_menu(metadata):
     Get the menu (a dictionary) with the given menu_id
     '''
     url = 'https://www.waiter.com/api/v1/menus/{}.json?wrap=1'.format(metadata['menu_id'])
+
+    log('GET {url}'.format(url=url))
     r = requests.get(url)
     if r.status_code != 200:
         raise get_menu_error('GET {} failed'.format(url))
+
     menu = r.json()
 
     # Additional data not provided by the Waiter API
@@ -84,14 +126,10 @@ def get_menu_metadata(session_cookie, day):
     assert session_cookie
     assert day >= 0 and day < 4
 
-    menu_page_url = 'https://www.waiter.com/vcs/purestorage-dinner'
-    menu_page = requests.get(menu_page_url, cookies=session_cookie)
-    if menu_page.status_code != 200:
-        raise get_menu_error(
-            'GET {url} failed: {status}'.format(url=menu_page_url, status=menu_page.status_code))
+    menu_page = get_menu_page(session_cookie, day)
 
     # A list of all vendors for the week
-    services = extract_services(menu_page.text)
+    services = extract_services(menu_page)
 
     # Salad spot is available every day. So we remove it, find the day's unique options, and
     # then always add in salad spot
