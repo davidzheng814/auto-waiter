@@ -37,7 +37,7 @@ def add_item(session_cookie, item):
     url = 'https://www.waiter.com/api/v1/cart_items.json'
     r = requests.post(url, cookies=session_cookie, data=item)
     if r.status_code != 200:
-        log('POST {url} failed: {status}'.format(url=url, status=r.status_code))
+        log('POST {url} failed: {status} {message}'.format(url=url, status=r.status_code, message=r.json().get('message')))
 
 def get_menus(session_cookie, day, force=False):
     '''
@@ -51,7 +51,7 @@ def get_menus(session_cookie, day, force=False):
         menus = [get_menu(metadata) for metadata in get_menu_metadata(session_cookie, day)]
     except get_menu_error:
         log('Error getting menus from Waiter.com')
-        return None
+        raise get_menu_error
 
     if force:
         # Ignore menu update status
@@ -65,7 +65,7 @@ def get_menus(session_cookie, day, force=False):
             if menus == json.loads(f.read()):
                 # Menus the same, not yet updated
                 log('Menus not yet updated')
-                return None
+                raise get_menu_error
     except IOError:
         # No previous menu file, continue as normal
         pass
@@ -109,16 +109,19 @@ def get_user_sessions():
 def do_order(session, menus):
     log('Preparing order for {user}'.format(user=session['username']))
 
-    order_ids = pick_food(menus, session['preferences'])
+    orders = pick_food(menus, session['preferences'])
 
     for day in range(get_day_of_week(), NUM_DAYS):
         cart_id = get_cart_ids(session['cookie'], day)[0]
 
+        # Everything is offset by the day we're starting at
+        index = day - get_day_of_week()
+        order_id = orders[index]['id']
+        options = orders[index]['option_id']
         item = {
             'cart_id': cart_id,
-            # Everything is offset by the day we're starting at
-            'menu_item_id': order_ids[day - get_day_of_week()],
-            #'menu_item_option_choice_ids': 5862793, TODO what is this?
+            'menu_item_id': order_id,
+            'menu_item_option_choice_ids': options,
             'quantity': 1
         }
 

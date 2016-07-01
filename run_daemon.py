@@ -28,8 +28,9 @@ def do_orders(attempts=0):
     for session in sessions:
         if menus is None:
             log('Getting menus for batch order')
-            menus = [get_menus(session['cookie'], day) for day in days]
-            if menus[0] is None:
+            try:
+                menus = [get_menus(session['cookie'], day) for day in days]
+            except get_menu_error:
                 # Not available yet, schedule a retry
                 log('Unable to get menus. Will retry in {} seconds.'.format(RETRY_INTERVAL))
                 sleep(RETRY_INTERVAL)
