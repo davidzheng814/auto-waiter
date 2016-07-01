@@ -1,7 +1,6 @@
 """Top level configurations for the app."""
 
 import os
-from celery.schedules import crontab
 from util import *
 
 _BASEDIR = os.path.abspath(os.path.dirname(__file__))

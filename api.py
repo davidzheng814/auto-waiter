@@ -101,9 +101,6 @@ def get_user_sessions():
     return sessions
 
 def do_order(session, day_of_week, menus):
-    '''
-    If force, submit a new order for a user even if the menus have not been updated
-    '''
     log('Preparing order for {user}, day {day}'.format(user=session['username'], day=day_of_week))
 
     order_id = pick_food(menus, session['preferences'])
