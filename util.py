@@ -10,6 +10,12 @@ def guarantee_existence(dirs):
         if not os.path.exists(dirname):
             os.makedirs(dirname)
 
+_LOG_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'auto_waiter.log')
+def log(message):
+    print message
+    with open(_LOG_FILE, 'w+') as f:
+        f.write(message)
+
 # Exceptions
 
 class get_menu_error(Exception):

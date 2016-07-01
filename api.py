@@ -41,19 +41,24 @@ def get_menus(session_cookie, day):
     try:
         menus = [get_menu(metadata) for metadata in get_menu_metadata(session_cookie, day)]
     except get_menu_error:
+        log('Error getting menus from Waiter.com')
         return None
 
+    # Check if menus have been updated
+    menu_file = PREVIOUS_MENUS.format(day)
     try:
-        with open(PREVIOUS_MENUS.format(day), 'r') as f:
+        with open(menu_file, 'r') as f:
             if menus == json.loads(f.read()):
                 # Menus the same, not yet updated
+                log('Menus not yet updated')
                 return None
     except IOError:
         # No previous menu file, continue as normal
         pass
 
     # Serialize the menus so that, next time, we can check if the menus have been updated
-    with open(PREVIOUS_MENUS.format(day), 'w') as f:
+    with open(menu_file, 'w') as f:
+        log('Writing menu file {}'.format(menu_file))
         f.write(json.dumps(menus))
 
     return menus
@@ -73,7 +78,7 @@ def get_user_sessions():
     preferences: a dictionary of preferences used to choose an order for the user
     '''
     sessions = []
-    for username, pref in load_prefs():
+    for username, pref in load_prefs().items():
         sessions.append({
             'cookie': login(username, pref['password']),
             'preferences': pref['preferences']
@@ -82,6 +87,7 @@ def get_user_sessions():
     return sessions
 
 def do_order(session, day_of_week, menus=None):
+    log('Preparing order for day {day}'.format(day=day_of_week))
     if menus is None:
         menus = get_menus(session['cookie'], day_of_week)
     # TODO select and order and make it

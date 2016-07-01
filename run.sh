@@ -1,0 +1,1 @@
+cat "crontab" | crontab -

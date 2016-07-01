@@ -9,3 +9,5 @@ data/*
 celerybeat-schedule.db
 celerybeat.pid
 celeryd.pid
+
+**.log
