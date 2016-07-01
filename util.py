@@ -3,14 +3,7 @@ import requests
 import json
 from datetime import datetime
 import re
-
-def guarantee_existence(dirs):
-    '''
-    For each directory in the given list, create it if it does not already exist
-    '''
-    for dirname in dirs:
-        if not os.path.exists(dirname):
-            os.makedirs(dirname)
+from config import *
 
 _LOG_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'auto_waiter.log')
 _LOG = open(_LOG_FILE, 'a')
@@ -62,7 +55,7 @@ def get_menu_page(session_cookie, day=datetime.today(), cached_pages = {}):
     server at most once per day
     '''
     if day not in cached_pages:
-        menu_page_url = 'https://www.waiter.com/vcs/purestorage-dinner'
+        menu_page_url = VCS_URL
 
         log('GET {url}'.format(url=menu_page_url))
         menu_page = requests.get(menu_page_url, cookies=session_cookie)
@@ -127,19 +120,23 @@ def get_menu_metadata(session_cookie, day):
     Get data used to retrieve the menus available on day (Monday=0, etc)
     '''
     assert session_cookie
-    assert day >= 0 and day < 4
+    assert day >= 0 and day < NUM_DAYS
 
     menu_page = get_menu_page(session_cookie, day)
 
     # A list of all vendors for the week
     services = extract_services(menu_page)
 
-    # Salad spot is available every day. So we remove it, find the day's unique options, and
-    # then always add in salad spot
-    not_salad_spot = [service for service in services if service['name'] != 'Salad Spot']
-    salad_spot = [service for service in services if service['name'] == 'Salad Spot'][0]
-    data = [extract_menu_metadata(service) for service in not_salad_spot][3*day:3*day + 3]
-    data.append(extract_menu_metadata(salad_spot))
+    data = None
+    if HAS_SALAD_SPOT:
+        # Salad spot is available every day. So we remove it, find the day's unique options, and
+        # then always add in salad spot
+        not_salad_spot = [service for service in services if service['name'] != 'Salad Spot']
+        salad_spot = [service for service in services if service['name'] == 'Salad Spot'][0]
+        data = [extract_menu_metadata(service) for service in not_salad_spot][(NUM_STORES-1)*day:(NUM_STORES-1)*day + (NUM_STORES-1)]
+        data.append(extract_menu_metadata(salad_spot))
+    else:
+        data = [extract_menu_metadata(service) for service in services][NUM_STORES*day:NUM_STORES*day + NUM_STORES]
 
     return data
 

@@ -31,7 +31,13 @@ def login(username, password):
 
 def add_item(session_cookie, item):
     assert session_cookie
-    r = requests.post('https://www.waiter.com/api/v1/cart_items.json', cookies=session_cookie, data=item)
+
+    log('Adding item {item} to cart {cart}'.format(item=item['menu_item_id'], cart=item['cart_id']))
+
+    url = 'https://www.waiter.com/api/v1/cart_items.json'
+    r = requests.post(url, cookies=session_cookie, data=item)
+    if r.status_code != 200:
+        log('POST {url} failed: {status}'.format(url=url, status=r.status_code))
 
 def get_menus(session_cookie, day, force=False):
     '''
@@ -74,7 +80,7 @@ def get_menus(session_cookie, day, force=False):
 def get_cart_ids(session_cookie, day):
     menu_page = get_menu_page(session_cookie, day)
     all_ids = json.loads(try_get_pattern(r'var cartIds = (\[[0-9,]*\])', menu_page, group=1))
-    return sorted(all_ids)[day*4:day*4 + 4]
+    return sorted(all_ids)[day*NUM_STORES:day*NUM_STORES + NUM_STORES]
 
 def load_prefs():
     prefs = {}
@@ -105,15 +111,13 @@ def do_order(session, menus):
 
     order_ids = pick_food(menus, session['preferences'])
 
-    for day in range(get_day_of_week(), 4):
-        # TODO: Each day has 4 cart IDs. We arbitrarily add the order to the first one. This will need
-        # to be tested, and if it doesn't work, we'll have to find out which cart ID goes with which
-        # restaurant
+    for day in range(get_day_of_week(), NUM_DAYS):
         cart_id = get_cart_ids(session['cookie'], day)[0]
 
         item = {
             'cart_id': cart_id,
-            'menu_item_id': order_ids[day],
+            # Everything is offset by the day we're starting at
+            'menu_item_id': order_ids[day - get_day_of_week()],
             #'menu_item_option_choice_ids': 5862793, TODO what is this?
             'quantity': 1
         }
