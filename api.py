@@ -100,24 +100,25 @@ def get_user_sessions():
 
     return sessions
 
-def do_order(session, day_of_week, menus):
-    log('Preparing order for {user}, day {day}'.format(user=session['username'], day=day_of_week))
+def do_order(session, menus):
+    log('Preparing order for {user}'.format(user=session['username']))
 
-    order_id = pick_food(menus, session['preferences'])
+    order_ids = pick_food(menus, session['preferences'])
 
-    # TODO: Each day has 4 cart IDs. We arbitrarily add the order to the first one. This will need
-    # to be tested, and if it doesn't work, we'll have to find out which cart ID goes with which
-    # restaurant
-    cart_id = get_cart_ids(session['cookie'], day_of_week)[0]
+    for day in range(get_day_of_week(), 4):
+        # TODO: Each day has 4 cart IDs. We arbitrarily add the order to the first one. This will need
+        # to be tested, and if it doesn't work, we'll have to find out which cart ID goes with which
+        # restaurant
+        cart_id = get_cart_ids(session['cookie'], day)[0]
 
-    item = {
-        'cart_id': cart_id,
-        'menu_item_id': order_id,
-        #'menu_item_option_choice_ids': 5862793, TODO what is this?
-        'quantity': 1
-    }
+        item = {
+            'cart_id': cart_id,
+            'menu_item_id': order_ids[day],
+            #'menu_item_option_choice_ids': 5862793, TODO what is this?
+            'quantity': 1
+        }
 
-    add_item(session['cookie'], item)
+        add_item(session['cookie'], item)
 
 def get_day_of_week():
     return datetime.today().weekday()

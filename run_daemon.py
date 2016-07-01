@@ -13,25 +13,25 @@ def do_orders(attempts=0):
     if attempts > MAX_ATTEMPTS:
         raise get_menu_error('Exceeded maximum retries')
 
-    menus = {}
+    menus = [None for day in range(get_day_of_week(), 4)]
     sessions = get_user_sessions()
     if not sessions:
         log('No users detected. Exiting.')
         return
 
     for session in sessions:
-        for day_of_week in range(get_day_of_week(), 4):
+        for day in range(get_day_of_week(), 4):
             # We store menus in a dictionary so we only have to get them for the first user
-            if day_of_week not in menus:
+            if menus[day] is None:
                 log('Getting menus for batch order')
-                menus[day_of_week] = get_menus(session['cookie'], day_of_week)
-                if menus[day_of_week] is None:
+                menus[day] = get_menus(session['cookie'], day)
+                if menus[day] is None:
                     # Not available yet, schedule a retry
                     log('Unable to get menus. Will retry in {} seconds.'.format(RETRY_INTERVAL))
                     sleep(RETRY_INTERVAL)
                     return do_orders(attempts=attempts + 1)
 
-            do_order(session, day_of_week, menus[day_of_week])
+        do_order(session, menus)
 
 if __name__ == '__main__':
     do_orders()

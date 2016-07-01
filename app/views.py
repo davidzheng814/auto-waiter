@@ -73,9 +73,10 @@ class Preferences(Resource):
             }
 
             log('Registered new preferences for user {}'.format(pref['username']))
-            for day_of_week in range(get_day_of_week(), 4):
-                menus = get_menus(session['cookie'], day_of_week, force=True)
-                do_order(session, day_of_week, menus)
+
+            # Make an order right away so the user gets some immediate feedback
+            menus = [get_menus(session['cookie'], day, force=True) for day in range(get_day_of_week(), 4)]
+            do_order(session, menus)
 
             return True
 
