@@ -125,7 +125,8 @@ def get_menu_metadata(session_cookie, day):
     menu_page_url = 'https://www.waiter.com/vcs/purestorage-dinner'
     menu_page = requests.get(menu_page_url, cookies=session_cookie)
     if menu_page.status_code != 200:
-        raise get_menu_error('GET %s failed: %d', menu_page_url, menu_page.status_code)
+        raise get_menu_error(
+            'GET {url} failed: {status}'.format(url=menu_page_url, status=menu_page.status_code))
 
     # A list of all vendors for the week
     services = extract_services(menu_page.text)
