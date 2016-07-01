@@ -120,9 +120,7 @@ def get_menu_metadata(session_cookie, day):
     Get data used to retrieve the menus available on day (Monday=0, etc)
     '''
     assert session_cookie
-
-    if day < 0 or day > 3:
-        raise ValueError('day must be in the range [0, 4)')
+    assert day >= 0 and day < 4
 
     menu_page_url = 'https://www.waiter.com/vcs/purestorage-dinner'
     menu_page = requests.get(menu_page_url, cookies=session_cookie)
