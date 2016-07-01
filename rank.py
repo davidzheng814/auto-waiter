@@ -1,21 +1,32 @@
 import json
 import operator
-'''
-cuisine={ "indian":5, "mediterranean":3, "italian":5, "american":7, "mexican":1, "chinese":6, "japanese":5, "vietnamese":5, "thai":8, "korean":6}
-meat={"beef":6, "pork":4, "chicken":3, "duck":4, "lamb":20, "seafood":5, "vegetables":4}
-vegetable={"tomato" : 3, "broccoli" : 7, "onion" : 5}
-allergy=["lamb"]
-'''
+
 cuisine_weight = 5
 meat_weight = 3
 veg_weight = 2
 
 
-def calculate_score_for_item(item, meat, vegetable, allergy):
+expand= { "seafood":["fish", "shrimp", "salmon", "tuna", "cod", "lobster", "crab", "scallops", "octopus", "haddock"],
+          "asian":["chinese", "japanese", "korean", "vietnamese", "thai"],
+          "beans":["pea"],
+          "flowers":["cauliflower","broccoli"],
+          "leaves":["kale","chard","spinach","lettuce","cabbage"],
+          "milk":["cheese", "mozzarella", "paneer"],
+          "cheese":["mozzarella", "paneer"]
+          }
+
+
+def calculate_score_for_item(item, meat, vegetable, allergy, favorite):
     item = item.lower()
+
     for key in allergy:
         if key.lower() in item:
             return -100000
+
+    score_f = 0
+    for key in favorite:
+        if key.lower() in item:
+            score_f = 1000
     score_m = 0
     for key, val in meat.iteritems():
         if key.lower() in item and score_m < val * meat_weight:
@@ -24,19 +35,45 @@ def calculate_score_for_item(item, meat, vegetable, allergy):
     for key, val in vegetable.iteritems():
         if key.lower() in item and score_v < val * veg_weight:
             score_v = val * veg_weight
-    return score_m + score_v
+    return score_m + score_v + score_f
 
 
 def parse_json(json_string):
     return json.loads(json_string)
 
 
-def parse_preference (preference_json, cuisine, meat, vegetable, allergy):
+def parse_preference (preference_json, cuisine, meat, vegetable, allergy, favorites):
     result = json.loads(preference_json)
-    allergy.extend( result["restrictions"])
-    meat.update(result["scores"]["meats"])
-    vegetable.update(result["scores"]["vegetable"])
-    cuisine.update(result["scores"]["cuisine"])
+
+    allergy.extend( result["preferences"]["restrictions"])
+    for key, val in expand.iteritems():
+        if key in allergy:
+            allergy.extend(val)
+
+    for key in allergy:
+        print key
+
+    favorites.extend(result["preferences"]["favorites"])
+    for key, val in expand.iteritems():
+        if key in favorites:
+            favorites.extend(val)
+
+    meat.update(result["preferences"]["scores"]["meats"])
+    for key, val in expand.iteritems():
+        if key in meat:
+            meat.update( { k:meat[key] for k in expand[key] } )
+
+
+    vegetable.update(result["preferences"]["scores"]["vegetables"])
+    for key, val in expand.iteritems():
+        if key in vegetable:
+            vegetable.update( { k:vegetable[key] for k in expand[key] } )
+
+    cuisine.update(result["preferences"]["scores"]["cuisines"])
+    for key, val in expand.iteritems():
+        if key in cuisine:
+            cuisine.update( { k:cuisine[key] for k in expand[key] } )
+
 
 
 def pick_food(menu_json, preference_json):
@@ -45,7 +82,8 @@ def pick_food(menu_json, preference_json):
     meat={}
     vegetable={}
     allergy=[]
-    parse_perference(preference_json, cuisine, meat, vegetable, allergy)
+    favorites=[]
+    parse_preference(preference_json, cuisine, meat, vegetable, allergy, favorites)
     num_restaurant = len(result)
     print num_restaurant
     # every restaurant
@@ -64,42 +102,42 @@ def pick_food(menu_json, preference_json):
             if "items" in section:
                 foods = section["items"]
                 for food in foods:
+                    '''
                     if "inventory" in food:
                         if food["inventory"] == 0:
                             continue
+                 '''
+                    if "price" in food:
+                        if food["price"] <= 8:
+                            continue
                     score = 0
                     if "description" in food:
-                        score=calculate_score_for_item(food["description"]+" "+food["name"], meat, vegetable, allergy) + base_score
+                        score=calculate_score_for_item(food["description"]+" "+food["name"], meat, vegetable, allergy, favorites) + base_score
                     else:
-                        score=calculate_score_for_item(food["name"], meat, vegetable, allergy)+base_score
+                        score=calculate_score_for_item(food["name"], meat, vegetable, allergy, favorites)+base_score
 
                     final_options[food["name"]]=(score, food)
-                    if score > highest:
-                        highest = score
-                        name = food["name"]
-                        des = food["description"]
-
-    print highest
-    print name
-    print des
 
     b = final_options.items()
     b.sort(key = lambda x : x[1][0], reverse=True)
 
-    for i in range(0,5):
+    for i in range(0,10):
         print b[i][0]
         print b[i][1][0]
         if "description" in b[i][1][1]:
             print b[i][1][1]["description"]
         print
 
+    return b[0][1][1]["id"]
 
 
 f=open('examples/menus.json','r')
 x = f.read()
-pick_food(x, )
+file = open("data/preferences/dshao@purestorage.com.json","r")
+y=file.read()
+return_id = pick_food(x, y)
 
-
+print "return id is "+str(return_id)
 
 
 
