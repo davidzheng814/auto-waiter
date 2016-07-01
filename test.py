@@ -7,14 +7,14 @@ import json
 
 api_key = 'AIzaSyCZshO4gyP5g3brwdmb-4OQ9R3WOK7d2Ng'
 location = '37.388009,-122.083157'
-radius = '15000'
-
+radius = '30000'
+'''
 with open('../menus.json') as data_file:
     data = json.load(data_file)
 
 # get the restaurant name from the waiter.com menu json
 restaurant_name = data[1]['updated']['menus'][0]['name']
-
+'''
 def get_restaurant_rate(restaurant_name):
     # use the restaurant name to search nearby pure storage for the restaurant
     r = requests.get('https://maps.googleapis.com/maps/api/place/nearbysearch/json?location={location} \
