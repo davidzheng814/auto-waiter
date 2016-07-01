@@ -126,8 +126,12 @@ def pick_food(menu_json, preference_json):
         top = [ x for x in b if x[1][0] == highest ]
 
         index = top[randint(0, len(top)-1)]
-
-        id_list.append(index[1][1]["id"])
+        r={}
+        if "options" in index[1][1]:
+            r = { "id": index[1][1]["id"], "option_id" : ','.join([item["choices"][0]["id"] for item in index[1][1]["options"]]) }
+        else:
+            r={"id":index[1][1]["id"], "option_id" : ""}
+        id_list.append(r)
         final_result.append(index[1][1]["name"]+" "+index[1][1]["description"])
 
     print (final_result)
