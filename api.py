@@ -32,7 +32,8 @@ def login(username, password):
 def add_item(session_cookie, item):
     assert session_cookie
 
-    log('Adding item {item} to cart {cart}'.format(item=item['menu_item_id'], cart=item['cart_id']))
+    log('Adding item {item} with options {options} to cart {cart}'.format(
+        item=item['menu_item_id'], cart=item['cart_id'], options=item['menu_item_option_choice_ids']))
 
     url = 'https://www.waiter.com/api/v1/cart_items.json'
     r = requests.post(url, cookies=session_cookie, data=item)
@@ -77,10 +78,19 @@ def get_menus(session_cookie, day, force=False):
 
     return menus
 
-def get_cart_ids(session_cookie, day):
+def get_cart_id(session_cookie, day, restaurant):
     menu_page = get_menu_page(session_cookie, day)
-    all_ids = json.loads(try_get_pattern(r'var cartIds = (\[[0-9,]*\])', menu_page, group=1))
-    return sorted(all_ids)[day*NUM_STORES:day*NUM_STORES + NUM_STORES]
+
+    cart_ids = json.loads(try_get_pattern(r'var cartIds = (\[[0-9,]*\])', menu_page, group=1))
+    cart_ids = sorted(cart_ids)[day*NUM_STORES:day*NUM_STORES + NUM_STORES]
+
+    store_ids = sorted(get_menu_ids(session_cookie, day))
+    index = store_ids.index(restaurant)
+    if index == -1:
+        log('Store {store} is not availabe on day {day}'.format(store=restaurant, day=day))
+        return
+
+    return cart_ids[index]
 
 def load_prefs():
     prefs = {}
@@ -112,10 +122,10 @@ def do_order(session, menus):
     orders = pick_food(menus, session['preferences'])
 
     for day in range(get_day_of_week(), NUM_DAYS):
-        cart_id = get_cart_ids(session['cookie'], day)[0]
-
         # Everything is offset by the day we're starting at
         index = day - get_day_of_week()
+
+        cart_id = get_cart_id(session['cookie'], day, orders[index]['restaurant_id'])
         order_id = orders[index]['id']
         options = orders[index]['option_id']
         item = {

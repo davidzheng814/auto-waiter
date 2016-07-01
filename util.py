@@ -118,6 +118,10 @@ def get_menu(metadata):
 
     return menu
 
+def get_menu_ids(session_cookie, day):
+    metadata = get_menu_metadata(session_cookie, day)
+    return [menu['menu_id'] for menu in metadata]
+
 def get_menu_metadata(session_cookie, day):
     '''
     Get data used to retrieve the menus available on day (Monday=0, etc)
