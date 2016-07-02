@@ -20,17 +20,20 @@ def login(username, password):
     try:
         res = post(make_url(API_URL, 'login'), data=data).json()
     except http_error:
+        log('Could not log in {username}: invalid credentials', username=username)
         return False
 
     if 'access_token' in res:
         access_token = res['access_token']
     else:
+        log('Could not log in {username}: no access token', username=username)
         return False
 
     try:
         r = get('https://www.waiter.com/home/{token}'.format(token=access_token))
         return r.cookies
     except http_error:
+        log('Could not log in {username}: no session cookie', username=username)
         return False
 
 def add_item(session_cookie, item):
@@ -100,6 +103,8 @@ def get_menus(session_cookie, day, force=False):
     return menus
 
 def get_cart_id(session_cookie, day, restaurant):
+    assert session_cookie
+
     cart_ids = get_cart_ids(session_cookie, day)
     store_ids = sorted(get_menu_ids(session_cookie, day))
     index = store_ids.index(restaurant)
@@ -110,12 +115,16 @@ def get_cart_id(session_cookie, day, restaurant):
     return cart_ids[index]
 
 def get_cart_ids(session_cookie, day):
+    assert session_cookie
+
     menu_page = get_menu_page(session_cookie)
 
     cart_ids = json.loads(try_get_pattern(r'var cartIds = (\[[0-9,]*\])', menu_page, group=1))
     return sorted(cart_ids)[day*NUM_STORES:day*NUM_STORES + NUM_STORES]
 
 def get_order(session_cookie, day):
+    assert session_cookie
+
     order = []
     for cart_id in get_cart_ids(session_cookie, day):
         payload = {
@@ -142,8 +151,12 @@ def get_user_sessions():
     '''
     sessions = []
     for username, pref in load_prefs().items():
+        cookie = login(username, pref['password'])
+        if not cookie:
+            continue
+
         sessions.append({
-            'cookie': login(username, pref['password']),
+            'cookie': cookie,
             'preferences': pref['preferences'],
             'username': username
         })

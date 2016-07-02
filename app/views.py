@@ -66,6 +66,10 @@ class Preferences(Resource):
                 text = json.dumps(pref, sort_keys=True, indent=4, separators=(',', ': '))
                 f.write(text)
 
+            cookie = login(pref['username'], pref['password'])
+            if not cookie:
+                return False
+
             session = {
                 'cookie': login(pref['username'], pref['password']),
                 'preferences': pref['preferences'],
