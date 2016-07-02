@@ -21,10 +21,63 @@ def log(message):
 class get_menu_error(Exception):
     def __init__(self, value):
         self.value = value
+
     def __str__(self):
         return repr(self.value)
 
+class http_error(Exception):
+    def __init__(self, response):
+        Exception.__init__(self, response.text)
+        self.value = '{status} {message}'.format(
+            status=response.status_code, message=response.jsons().get('message'))
+        self.response = response
+
+    def __str__(self):
+        return repr(self.value)
+
+class invalid_restaurant_error(Exception):
+    def __init__(self, restaurant, day):
+        self.value = 'Restaurant "{store}" is not available on day {day}'.format(
+            store=restaurant, day=day)
+        Exception.__init__(self, self.value)
+
+# HTTP
+
+def get(url, **kwargs):
+    '''
+    Wrapper to send a GET request. Accepts the same kwargs as requests.get(). If the request is
+    successful, the server response is returned. Otherwise, an http_error is raised.
+    '''
+    return _request('get', url, **kwargs)
+
+def post(url, **kwargs):
+    '''
+    Same as get, but for post requests
+    '''
+    return _request('post', url, **kwargs)
+
+def _request(method, url, **kwargs):
+    '''
+    Helper function for the other http functions
+    '''
+    func = eval('.'.join(['requests', method]))
+    method = method.upper()
+
+    r = func(url, **kwargs)
+    log('{method} {url}'.format(method=method, url=r.url))
+
+    if r.status_code != 200:
+        log('{method} {url} failed: {status} {message}'.format(
+            method=method, url=url, status=r.status_code, message=r.json().get('message')))
+        raise http_error(r)
+
+    return r
+
+
 # API helpers
+
+def make_url(*args):
+    return '/'.join(args)
 
 def try_get_pattern(pattern, source, group=0):
     '''
@@ -52,23 +105,21 @@ def _try_get_pattern(pattern, source):
         raise Exception('/vcs/purestorage-dinner format has changed')
     return match
 
-def get_menu_page(session_cookie, day=datetime.today(), cached_pages = {}):
+def get_menu_page(session_cookie, cached_pages={}):
     '''
     Memoized function to get the purestorage vcs html page. Requests the page from the Waiter
     server at most once per day
     '''
-    if day not in cached_pages:
-        menu_page_url = VCS_URL
+    key = datetime.today().date
 
-        log('GET {url}'.format(url=menu_page_url))
-        menu_page = requests.get(menu_page_url, cookies=session_cookie)
-        if menu_page.status_code != 200:
-            raise get_menu_error(
-                'GET {url} failed: {status}'.format(url=menu_page_url, status=menu_page.status_code))
+    if key not in cached_pages:
+        try:
+            r = get(VCS_URL, cookies=session_cookie)
+            cached_pages[key] = r.text
+        except http_error as e:
+            raise get_menu_error(repr(e))
 
-        cached_pages[day] = menu_page.text
-
-    return cached_pages[day]
+    return cached_pages[key]
 
 def extract_services(menu_page):
     '''
@@ -104,19 +155,19 @@ def get_menu(metadata):
     '''
     Get the menu (a dictionary) with the given menu_id
     '''
-    url = 'https://www.waiter.com/api/v1/menus/{}.json?wrap=1'.format(metadata['menu_id'])
+    try:
+        url = make_url(API_URL, 'menus', '{}.json'.format(metadata['menu_id']))
+        payload = {
+            'wrap': 1
+        }
+        menu = get(url, params=payload).json()
 
-    log('GET {url}'.format(url=url))
-    r = requests.get(url)
-    if r.status_code != 200:
-        raise get_menu_error('GET {} failed'.format(url))
+        # Additional data not provided by the Waiter API
+        menu['cuisine_types'] = metadata['cuisine_types']
 
-    menu = r.json()
-
-    # Additional data not provided by the Waiter API
-    menu['cuisine_types'] = metadata['cuisine_types']
-
-    return menu
+        return menu
+    except http_error as e:
+        raise get_menu_error(repr(e))
 
 def get_menu_ids(session_cookie, day):
     metadata = get_menu_metadata(session_cookie, day)
@@ -129,7 +180,7 @@ def get_menu_metadata(session_cookie, day):
     assert session_cookie
     assert day >= 0 and day < NUM_DAYS
 
-    menu_page = get_menu_page(session_cookie, day)
+    menu_page = get_menu_page(session_cookie)
 
     # A list of all vendors for the week
     services = extract_services(menu_page)

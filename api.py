@@ -1,5 +1,4 @@
 import os
-import requests
 import json
 from datetime import datetime
 from config import *
@@ -9,14 +8,21 @@ from rank import pick_food
 PREVIOUS_MENUS = os.path.join(MENU_DIR, 'previous_menus{}.json')
 
 def login(username, password):
+    log('Log in user {username}'.format(username=username))
+
     data = {
         'username':username,
         'password':password,
         'response_type':'code',
         'redirect_uri':'https%3A%2F%2Fwww.waiter.com%2Foauth%2Fcallback'
     }
-    r = requests.post('https://www.waiter.com/api/v1/login', data=data)
-    res = r.json()
+
+    res = None
+
+    try:
+        res = post(make_url(API_URL, 'login'), data=data).json()
+    except http_error:
+        return False
 
     if 'access_token' in res:
         access_token = res['access_token']
@@ -24,10 +30,11 @@ def login(username, password):
     else:
         return False
 
-    r = requests.get('https://www.waiter.com/home/{token}'.format(token=access_token))
-    session_cookie = r.cookies
-
-    return session_cookie
+    try:
+        r = get('https://www.waiter.com/home/{token}'.format(token=access_token))
+        return r.cookies
+    except http_error:
+        return False
 
 def add_item(session_cookie, item):
     assert session_cookie
@@ -35,10 +42,11 @@ def add_item(session_cookie, item):
     log('Adding item {item} with options {options} to cart {cart}'.format(
         item=item['menu_item_id'], cart=item['cart_id'], options=item['menu_item_option_choice_ids']))
 
-    url = 'https://www.waiter.com/api/v1/cart_items.json'
-    r = requests.post(url, cookies=session_cookie, data=item)
-    if r.status_code != 200:
-        log('POST {url} failed: {status} {message}'.format(url=url, status=r.status_code, message=r.json().get('message')))
+    try:
+        post(make_url(API_URL, 'cart_items.json'), cookies=session_cookie, data=item)
+        return True
+    except:
+        return False
 
 def get_menus(session_cookie, day, force=False):
     '''
