@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 """
    Run the server for the app.
    Note: Run as root on production, and user locally.
