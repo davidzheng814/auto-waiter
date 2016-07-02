@@ -36,7 +36,12 @@ def do_orders(attempts=0):
                 sleep(RETRY_INTERVAL)
                 return do_orders(attempts=attempts + 1)
 
-        do_order(session, menus)
+        # Don't let an error for one user stop other users from ordering
+        try:
+            do_order(session, menus)
+        except Exception as e:
+            log('Error while ordering for user {username}: {error}'.format(
+                username=session['username'], error=repr(e)))
 
 if __name__ == '__main__':
     do_orders()
