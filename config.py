@@ -32,8 +32,10 @@ THREADS_PER_PAGE = 6
 WTF_CSRF_ENABLED = True
 WTF_CSRF_SECRET_KEY = "somethingimpossibletoguess"
 
-# VCS settings
-VCS_URL = 'https://www.waiter.com/vcs?site=627'
-NUM_STORES = 2
-HAS_SALAD_SPOT = False
-NUM_DAYS = 7
+# Waiter.com settings
+VCS_URL = 'https://www.waiter.com/purestorage-dinner'
+NUM_STORES = 4
+HAS_SALAD_SPOT = True
+NUM_DAYS = 3    # Short week because of the holiday. Change back to 4 next week
+
+API_URL = 'https://www.waiter.com/api/v1'
