@@ -76,7 +76,7 @@ class Preferences(Resource):
 
             # Make an order right away so the user gets some immediate feedback
             menus = [get_menus(session['cookie'], day, force=True) for day in range(get_day_of_week(), NUM_DAYS)]
-            do_order(session, menus)
+            do_order(session, menus, force=True)
 
             return True
 

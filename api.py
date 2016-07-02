@@ -87,18 +87,31 @@ def get_menus(session_cookie, day, force=False):
     return menus
 
 def get_cart_id(session_cookie, day, restaurant):
-    menu_page = get_menu_page(session_cookie, day)
-
-    cart_ids = json.loads(try_get_pattern(r'var cartIds = (\[[0-9,]*\])', menu_page, group=1))
-    cart_ids = sorted(cart_ids)[day*NUM_STORES:day*NUM_STORES + NUM_STORES]
-
+    cart_ids = get_cart_ids(session_cookie, day)
     store_ids = sorted(get_menu_ids(session_cookie, day))
     index = store_ids.index(restaurant)
     if index == -1:
-        log('Store {store} is not availabe on day {day}'.format(store=restaurant, day=day))
-        return
+        log('Store {store} is not available on day {day}'.format(store=restaurant, day=day))
+        raise invalid_restaurant_error(restaurant, day)
 
     return cart_ids[index]
+
+def get_cart_ids(session_cookie, day):
+    menu_page = get_menu_page(session_cookie)
+
+    cart_ids = json.loads(try_get_pattern(r'var cartIds = (\[[0-9,]*\])', menu_page, group=1))
+    return sorted(cart_ids)[day*NUM_STORES:day*NUM_STORES + NUM_STORES]
+
+def get_order(session_cookie, day):
+    order = []
+    for cart_id in get_cart_ids(session_cookie, day):
+        payload = {
+            'cart_id': cart_id,
+            'all': 1
+        }
+        r = get(make_url(API_URL, 'cart_items'), params=payload, cookies=session_cookie)
+        order += r.json()['results']
+    return order
 
 def load_prefs():
     prefs = {}
@@ -124,12 +137,20 @@ def get_user_sessions():
 
     return sessions
 
-def do_order(session, menus):
+def do_order(session, menus, force=False):
     log('Preparing order for {user}'.format(user=session['username']))
+    if force:
+        log('Note: force requested')
 
     orders = pick_food(menus, session['preferences'])
 
     for day in range(get_day_of_week(), NUM_DAYS):
+        # Only order if the user has not already, unless forced
+        if get_order(session['cookie'], day) and not force:
+            log('User {user} already ordered for day {day}. Skipping.'.format(
+                user=session['username'], day=day))
+            continue
+
         # Everything is offset by the day we're starting at
         index = day - get_day_of_week()
 
