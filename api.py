@@ -166,5 +166,12 @@ def do_order(session, menus, force=False):
 
         add_item(session['cookie'], item)
 
+    log('Completed order for {user}'.format(user=session['username']))
+
 def get_day_of_week():
-    return datetime.today().weekday()
+    today = datetime.today().weekday()
+    if today >= NUM_DAYS:
+        # Start the next week
+        return 0
+    else:
+        return today
