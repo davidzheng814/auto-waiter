@@ -18,6 +18,8 @@ PREF_DIR = os.path.join(DATA_DIR, 'preferences') # User preferences
 MENU_DIR = os.path.join(DATA_DIR, 'menus')       # Cached menus
 guarantee_existence([DATA_DIR, PREF_DIR, MENU_DIR])
 
+LOG_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'auto_waiter.log')
+
 DEBUG = True
 
 # ADMINS = frozenset(['youremail@yourdomain.com'])

@@ -6,20 +6,23 @@ import re
 from config import *
 import traceback
 
-_LOG_FILE = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'auto_waiter.log')
-_LOG = open(_LOG_FILE, 'a')
+# Logging
+
 def log(message):
     today = datetime.today()
     timestamp = '{y:04d}-{mo:02d}-{d:02d} {h}:{m:02d}:{s:02d}'.format(
         y=today.year, mo=today.month, d=today.day, h=today.hour, m=today.minute, s=today.second)
     frame = traceback.extract_stack()[1]
     source = '{file}:{line}'.format(file=frame[0], line=frame[1])
-    _LOG.write('{time} {source} {message}\n'.format(time=timestamp, source=source, message=message))
+
+    with open(LOG_FILE, 'a') as f:
+        f.write('{time} {source} {message}\n'.format(time=timestamp, source=source, message=message))
 
 # Exceptions
 
 class get_menu_error(Exception):
     def __init__(self, value):
+        Exception.__init__(self, value)
         self.value = value
 
     def __str__(self):
