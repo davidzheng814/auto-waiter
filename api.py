@@ -8,7 +8,7 @@ from rank import pick_food
 PREVIOUS_MENUS = os.path.join(MENU_DIR, 'previous_menus{}.json')
 
 def login(username, password):
-    log('Log in user {username}'.format(username=username))
+    log('Log in user {username}', username=username)
 
     data = {
         'username':username,
@@ -17,8 +17,6 @@ def login(username, password):
         'redirect_uri':'https%3A%2F%2Fwww.waiter.com%2Foauth%2Fcallback'
     }
 
-    res = None
-
     try:
         res = post(make_url(API_URL, 'login'), data=data).json()
     except http_error:
@@ -26,7 +24,6 @@ def login(username, password):
 
     if 'access_token' in res:
         access_token = res['access_token']
-        user_id = res['user_id']
     else:
         return False
 
@@ -39,13 +36,15 @@ def login(username, password):
 def add_item(session_cookie, item):
     assert session_cookie
 
-    log('Adding item {item} with options {options} to cart {cart}'.format(
-        item=item['menu_item_id'], cart=item['cart_id'], options=item['menu_item_option_choice_ids']))
+    log('Adding item {item} with options {options} to cart {cart}',
+        item=item['menu_item_id'],
+        cart=item['cart_id'],
+        options=item['menu_item_option_choice_ids'])
 
     try:
         post(make_url(API_URL, 'cart_items.json'), cookies=session_cookie, data=item)
         return True
-    except:
+    except http_error:
         return False
 
 def get_menus(session_cookie, day, force=False):
@@ -81,7 +80,7 @@ def get_menus(session_cookie, day, force=False):
 
     # Serialize the menus so that, next time, we can check if the menus have been updated
     with open(menu_file, 'w') as f:
-        log('Writing menu file {}'.format(menu_file))
+        log('Writing menu file {}', menu_file)
         f.write(json.dumps(menus))
 
     return menus
@@ -91,7 +90,7 @@ def get_cart_id(session_cookie, day, restaurant):
     store_ids = sorted(get_menu_ids(session_cookie, day))
     index = store_ids.index(restaurant)
     if index == -1:
-        log('Store {store} is not available on day {day}'.format(store=restaurant, day=day))
+        log('Store {store} is not available on day {day}', store=restaurant, day=day)
         raise invalid_restaurant_error(restaurant, day)
 
     return cart_ids[index]
@@ -138,7 +137,7 @@ def get_user_sessions():
     return sessions
 
 def do_order(session, menus, force=False):
-    log('Preparing order for {user}'.format(user=session['username']))
+    log('Preparing order for {user}', user=session['username'])
     if force:
         log('Note: force requested')
 
@@ -147,8 +146,8 @@ def do_order(session, menus, force=False):
     for day in range(get_day_of_week(), NUM_DAYS):
         # Only order if the user has not already, unless forced
         if get_order(session['cookie'], day) and not force:
-            log('User {user} already ordered for day {day}. Skipping.'.format(
-                user=session['username'], day=day))
+            log('User {user} already ordered for day {day}. Skipping.',
+                user=session['username'], day=day)
             continue
 
         # Everything is offset by the day we're starting at
@@ -166,7 +165,7 @@ def do_order(session, menus, force=False):
 
         add_item(session['cookie'], item)
 
-    log('Completed order for {user}'.format(user=session['username']))
+    log('Completed order for {user}', user=session['username'])
 
 def get_day_of_week():
     today = datetime.today().weekday()

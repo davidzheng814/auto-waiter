@@ -1,6 +1,6 @@
-import os
 import requests
 import json
+import ntpath
 from datetime import datetime
 import re
 from config import *
@@ -8,12 +8,17 @@ import traceback
 
 # Logging
 
-def log(message):
+def log(_message, *args, **kwargs):
+    message = repr(_message).format(*args, **kwargs)
+
     today = datetime.today()
     timestamp = '{y:04d}-{mo:02d}-{d:02d} {h}:{m:02d}:{s:02d}'.format(
         y=today.year, mo=today.month, d=today.day, h=today.hour, m=today.minute, s=today.second)
-    frame = traceback.extract_stack()[1]
-    source = '{file}:{line}'.format(file=frame[0], line=frame[1])
+
+    frame = traceback.extract_stack(limit=2)[0]
+    source_file = ntpath.basename(frame[0])
+    source_line = frame[1]
+    source = '{file}:{line}'.format(file=source_file, line=source_line)
 
     with open(LOG_FILE, 'a') as f:
         f.write('{time} {source} {message}\n'.format(time=timestamp, source=source, message=message))
@@ -67,11 +72,11 @@ def _request(method, url, **kwargs):
     method = method.upper()
 
     r = func(url, **kwargs)
-    log('{method} {url}'.format(method=method, url=r.url))
+    log('{method} {url}', method=method, url=r.url)
 
     if r.status_code != 200:
-        log('{method} {url} failed: {status} {message}'.format(
-            method=method, url=url, status=r.status_code, message=r.json().get('message')))
+        log('{method} {url} failed: {status} {message}',
+            method=method, url=url, status=r.status_code, message=r.json().get('message'))
         raise http_error(r)
 
     return r
