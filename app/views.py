@@ -4,6 +4,7 @@ from flask_restful import Resource, Api, reqparse
 import os
 import json
 from collections import OrderedDict
+import threading
 
 from config import PREF_DIR
 from api import *
@@ -26,8 +27,6 @@ def thanks():
 API_BLUEPRINT = Blueprint("api", __name__, url_prefix="/api")
 PERF_API = Api(API_BLUEPRINT)
 
-prefs = load_prefs()
-
 def parse_pref(pref):
     if not pref['username'] or not pref['password']:
         return False
@@ -49,6 +48,13 @@ def parse_pref(pref):
         }
     }
 
+def force_order(session):
+    '''
+    Immediately make an order for the remainder of the week
+    '''
+    menus = [get_menus(session['cookie'], day, force=True) for day in range(get_day_of_week(), NUM_DAYS)]
+    do_order(session, menus, force=True)
+
 class Preferences(Resource):
     post_parser = reqparse.RequestParser()
     post_parser.add_argument('username', required=True)
@@ -58,29 +64,35 @@ class Preferences(Resource):
     post_parser.add_argument('scores', required=True)
     def post(self):
         pref = Preferences.post_parser.parse_args()
-
         pref = parse_pref(pref)
         if pref:
-            prefs[pref['username']] = pref
+            username = pref['username']
+            password = pref['password']
+
+            log('Updating preferences for user {username}', username=username)
+
+            # Validate credentials
+            cookie = login(pref['username'], pref['password'])
+            if not cookie:
+                log('Failed to update preferences for {username}: invalid credentials',
+                     username=username)
+                return False
+
+            # Write preferences to "database"
             with open(os.path.join(PREF_DIR, pref['username'] + '.json'), 'w') as f:
                 text = json.dumps(pref, sort_keys=True, indent=4, separators=(',', ': '))
                 f.write(text)
-
-            cookie = login(pref['username'], pref['password'])
-            if not cookie:
-                return False
-
-            session = {
-                'cookie': login(pref['username'], pref['password']),
-                'preferences': pref['preferences'],
-                'username': pref['username']
-            }
-
             log('Registered new preferences for user {}'.format(pref['username']))
 
+            session = {
+                'cookie': cookie,
+                'preferences': pref['preferences'],
+                'username': username
+            }
+
             # Make an order right away so the user gets some immediate feedback
-            menus = [get_menus(session['cookie'], day, force=True) for day in range(get_day_of_week(), NUM_DAYS)]
-            do_order(session, menus, force=True)
+            order_thread = threading.Thread(target=force_order, args=[session])
+            order_thread.start()
 
             return True
 
@@ -96,6 +108,9 @@ class Preferences(Resource):
 
         username = args['username']
         password = args['password']
+
+        prefs = load_prefs()
+
         if not username in prefs:
             return False
 
