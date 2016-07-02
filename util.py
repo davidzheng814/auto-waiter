@@ -59,10 +59,10 @@ def get(url, **kwargs):
     return _request('get', url, **kwargs)
 
 def post(url, **kwargs):
-    '''
-    Same as get, but for post requests
-    '''
     return _request('post', url, **kwargs)
+
+def delete(url, **kwargs):
+    return _request('delete', url, **kwargs)
 
 def _request(method, url, **kwargs):
     '''
@@ -80,7 +80,6 @@ def _request(method, url, **kwargs):
         raise http_error(r)
 
     return r
-
 
 # API helpers
 

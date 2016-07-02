@@ -47,6 +47,20 @@ def add_item(session_cookie, item):
     except http_error:
         return False
 
+def clear_order(session_cookie, day):
+    assert session_cookie
+
+    order = get_order(session_cookie, day)
+    if type(order) != type([]):
+        order = [order]
+    for item in order:
+        try:
+            delete(make_url(API_URL, 'cart_items', '{item}.json'.format(item=item)),
+                   cookies=session_cookie)
+        except http_error:
+            return False
+    return True
+
 def get_menus(session_cookie, day, force=False):
     '''
     Get the menus available on day (Monday=0, etc), or None if no menus available
@@ -138,14 +152,18 @@ def get_user_sessions():
 
 def do_order(session, menus, force=False):
     log('Preparing order for {user}', user=session['username'])
-    if force:
-        log('Note: force requested')
 
     orders = pick_food(menus, session['preferences'])
 
     for day in range(get_day_of_week(), NUM_DAYS):
-        # Only order if the user has not already, unless forced
-        if get_order(session['cookie'], day) and not force:
+        if force:
+            log('Force requested. Clearing existing order.')
+            if not clear_order(session['cookie'], day):
+                log('Unable to clear order. Skipping.')
+                continue
+
+        # Only order if the user has not already (unless forced)
+        if get_order(session['cookie'], day):
             log('User {user} already ordered for day {day}. Skipping.',
                 user=session['username'], day=day)
             continue
