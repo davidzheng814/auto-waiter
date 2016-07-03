@@ -8,7 +8,7 @@ from rank import pick_food
 PREVIOUS_MENUS = os.path.join(MENU_DIR, 'previous_menus{}.json')
 
 def login(username, password):
-    log('Log in user {username}', username=username)
+    log('Log in user {username}', INFO, username=username)
 
     data = {
         'username':username,
@@ -20,26 +20,26 @@ def login(username, password):
     try:
         res = post(make_url(API_URL, 'login'), data=data).json()
     except http_error:
-        log('Could not log in {username}: invalid credentials', username=username)
+        log('Could not log in {username}: invalid credentials', ERROR, username=username)
         return False
 
     if 'access_token' in res:
         access_token = res['access_token']
     else:
-        log('Could not log in {username}: no access token', username=username)
+        log('Could not log in {username}: no access token', ERROR, username=username)
         return False
 
     try:
         r = get('https://www.waiter.com/home/{token}'.format(token=access_token))
         return r.cookies
     except http_error:
-        log('Could not log in {username}: no session cookie', username=username)
+        log('Could not log in {username}: no session cookie', ERROR, username=username)
         return False
 
 def add_item(session_cookie, item):
     assert session_cookie
 
-    log('Adding item {item} with options {options} to cart {cart}',
+    log('Adding item {item} with options {options} to cart {cart}', INFO,
         item=item['menu_item_id'],
         cart=item['cart_id'],
         options=item['menu_item_option_choice_ids'])
@@ -75,12 +75,12 @@ def get_menus(session_cookie, day, force=False):
     try:
         menus = [get_menu(metadata) for metadata in get_menu_metadata(session_cookie, day)]
     except get_menu_error:
-        log('Error getting menus from Waiter.com')
+        log('Error getting menus from Waiter.com', ERROR)
         raise get_menu_error
 
     if force:
         # Ignore menu update status
-        log('Force menus requested, ignoring previous menus')
+        log('Force menus requested, ignoring previous menus', WARNING|INFO)
         return menus
 
     # Check if menus have been updated
@@ -89,15 +89,15 @@ def get_menus(session_cookie, day, force=False):
         with open(menu_file, 'r') as f:
             if menus == json.loads(f.read()):
                 # Menus the same, not yet updated
-                log('Menus not yet updated')
-                raise get_menu_error
+                log('Menus not yet updated', INFO)
+                raise get_menu_error('not updated')
     except IOError:
         # No previous menu file, continue as normal
         pass
 
     # Serialize the menus so that, next time, we can check if the menus have been updated
     with open(menu_file, 'w') as f:
-        log('Writing menu file {}', menu_file)
+        log('Writing menu file {}', INFO, menu_file)
         f.write(json.dumps(menus))
 
     return menus
@@ -109,7 +109,7 @@ def get_cart_id(session_cookie, day, restaurant):
     store_ids = sorted(get_menu_ids(session_cookie, day))
     index = store_ids.index(restaurant)
     if index == -1:
-        log('Store {store} is not available on day {day}', store=restaurant, day=day)
+        log('Store {store} is not available on day {day}', ERROR, store=restaurant, day=day)
         raise invalid_restaurant_error(restaurant, day)
 
     return cart_ids[index]
@@ -164,20 +164,20 @@ def get_user_sessions():
     return sessions
 
 def do_order(session, menus, force=False):
-    log('Preparing order for {user}', user=session['username'])
+    log('Preparing order for {user}', INFO, user=session['username'])
 
     orders = pick_food(menus, session['preferences'])
 
     for day in range(get_day_of_week(), NUM_DAYS):
         if force:
-            log('Force requested. Clearing existing order.')
+            log('Force requested. Clearing existing order.', WARNING|INFO)
             if not clear_order(session['cookie'], day):
-                log('Unable to clear order. Skipping.')
+                log('Unable to clear order. Skipping.', ERROR)
                 continue
 
         # Only order if the user has not already (unless forced)
         if get_order(session['cookie'], day):
-            log('User {user} already ordered for day {day}. Skipping.',
+            log('User {user} already ordered for day {day}. Skipping.', INFO,
                 user=session['username'], day=day)
             continue
 
@@ -196,7 +196,7 @@ def do_order(session, menus, force=False):
 
         add_item(session['cookie'], item)
 
-    log('Completed order for {user}', user=session['username'])
+    log('Completed order for {user}', INFO, user=session['username'])
 
 def get_day_of_week():
     today = datetime.today().weekday()

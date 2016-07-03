@@ -8,6 +8,10 @@ from getpass import getuser
 from subprocess import call
 
 from app import APP
+from util import parse_args
+
+parse_args()
+
 
 if getuser() == "root":
     APP.run(debug=False, host="172.31.11.17", port=80)

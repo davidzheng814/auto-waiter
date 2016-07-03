@@ -82,7 +82,7 @@ Auto-Waiter
                       recipients=[session['username']],
                       body=msg_body)
         mail.send(msg)
-        log('Sent confirmation email to {}', session['username'])
+        log('Sent confirmation email to {}', INFO, session['username'])
 
 def post_pref_order(session):
     '''
@@ -105,12 +105,12 @@ class Preferences(Resource):
             username = pref['username']
             password = pref['password']
 
-            log('Updating preferences for user {username}', username=username)
+            log('Updating preferences for user {username}', INFO, username=username)
 
             # Validate credentials
             cookie = login(username, password)
             if not cookie:
-                log('Failed to update preferences for {username}: invalid credentials',
+                log('Failed to update preferences for {username}: invalid credentials', ERROR,
                      username=username)
                 return False
 
@@ -118,7 +118,7 @@ class Preferences(Resource):
             with open(os.path.join(PREF_DIR, username + '.json'), 'w') as f:
                 text = json.dumps(pref, sort_keys=True, indent=4, separators=(',', ': '))
                 f.write(text)
-            log('Registered new preferences for user {}', username)
+            log('Registered new preferences for user {}', INFO, username)
 
             session = {
                 'cookie': cookie,

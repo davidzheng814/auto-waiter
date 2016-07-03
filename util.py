@@ -5,10 +5,68 @@ from datetime import datetime
 import re
 from config import *
 import traceback
+import argparse
+import sys
+
+# Command line
+
+sys_args = None
+
+def parse_args():
+    global sys_args
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--suppress', action='append', default=[], help='Categories not to log.')
+    sys_args = parser.parse_args()
+
+    #if not hasattr(sys_args, 'suppress'):
+    #    sys_args.suppress = []
+
+    # Translate from strings to bit fields
+    try:
+        sys_args.suppress = [eval(arg.upper()) for arg in sys_args.suppress]
+    except NameError:
+        print 'Invalid argument to suppress. Valid arguments are:'
+        for valid_name in all_filters:
+            print ' -  {name}'.format(name=valid_name)
+        sys.exit(1)
 
 # Logging
 
-def log(_message, *args, **kwargs):
+# Filters
+INFO = 1
+NETWORK = 2
+WARNING = 4
+ERROR = 8
+TRACE = 16
+all_filters = [
+            'info',
+            'network',
+            'warning',
+            'error',
+            'trace'
+        ]
+
+def _log_filters():
+    '''
+    Extract desired log level from --suppress command line arguments.
+    '''
+    filters = reduce(lambda x,y:x|y, [eval(filt.upper()) for filt in all_filters])
+    for arg in sys_args.suppress:
+        filters = filters & ~arg
+    return filters
+
+def log(_message, filter_by, *args, **kwargs):
+    '''
+    Print a statement to the log file. Message can be any object for which repr is defined sensibly.
+    If _message is a format string, then _message, args, and kwargs are passed to format.
+    The global _log_filters are checked to see if any of the fileds match the value of filter_by.
+    If not, nothing is printed.
+    '''
+
+    if _log_filters() & filter_by == 0:
+        return
+
     message = repr(_message).format(*args, **kwargs)
 
     today = datetime.today()
@@ -72,10 +130,10 @@ def _request(method, url, **kwargs):
     method = method.upper()
 
     r = func(url, **kwargs)
-    log('{method} {url}', method=method, url=r.url)
+    log('{method} {url}', NETWORK, method=method, url=r.url)
 
     if r.status_code != 200:
-        log('{method} {url} failed: {status} {message}',
+        log('{method} {url} failed: {status} {message}', NETWORK,
             method=method, url=url, status=r.status_code, message=r.json().get('message'))
         raise http_error(r)
 
