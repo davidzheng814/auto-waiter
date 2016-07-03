@@ -175,7 +175,7 @@ def get_menu_page(session_cookie, cached_pages={}):
     Memoized function to get the purestorage vcs html page. Requests the page from the Waiter
     server at most once per day
     '''
-    key = datetime.today().date
+    key = datetime.today().date()
 
     if key not in cached_pages:
         try:
