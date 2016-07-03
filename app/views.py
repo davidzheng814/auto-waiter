@@ -1,15 +1,31 @@
 """APIs for delivering information from the database to the app."""
-from flask import Blueprint, render_template
+from flask import Flask, Blueprint, render_template
 from flask_restful import Resource, Api, reqparse
 import os
 import json
 from collections import OrderedDict
 import threading
+from flask_mail import Mail
+from flask_mail import Message
 
 from config import PREF_DIR
 from api import *
 
-MAIN_BLUEPRINT = Blueprint('main', __name__)
+app = Flask(__name__)
+MAIN_BLUEPRINT = Blueprint('main', __name__, template_folder='templates')
+app.register_blueprint(MAIN_BLUEPRINT)
+
+app.config.update({
+    'DEBUG': True,
+    'MAIL_SERVER': 'smtp.gmail.com',
+    'MAIL_PORT': 587,
+    'MAIL_USE_TLS': True,
+    'MAIL_USE_SSL': False,
+    'MAIL_USERNAME': 'noreply.autowaiter@gmail.com',
+    'MAIL_PASSWORD': 'psautowaiter',
+})
+
+mail = Mail(app)
 
 FOOD_SECTIONS = OrderedDict()
 FOOD_SECTIONS['cuisines'] = ['indian', 'mediterranean', 'italian', 'american', 'mexican', 'asian']
@@ -48,7 +64,27 @@ def parse_pref(pref):
         }
     }
 
-def force_order(session):
+def post_pref_confirmation(session):
+    with app.app_context():
+        msg_body = \
+'''
+Hello,
+
+This is to let you know that we have saved your meal preferences, and we will place an order for \
+as soon as possible. To view your new preferences, simply visit {} and enter your credentials.
+
+Bon appetit,
+Auto-Waiter
+'''.format(BASE_URL)
+
+        msg = Message('Auto-Waiter preferences changed',
+                      sender=('Auto-Waiter', 'jbearer@purestorage.com'),
+                      recipients=[session['username']],
+                      body=msg_body)
+        mail.send(msg)
+        log('Sent confirmation email to {}', session['username'])
+
+def post_pref_order(session):
     '''
     Immediately make an order for the remainder of the week
     '''
@@ -72,17 +108,17 @@ class Preferences(Resource):
             log('Updating preferences for user {username}', username=username)
 
             # Validate credentials
-            cookie = login(pref['username'], pref['password'])
+            cookie = login(username, password)
             if not cookie:
                 log('Failed to update preferences for {username}: invalid credentials',
                      username=username)
                 return False
 
             # Write preferences to "database"
-            with open(os.path.join(PREF_DIR, pref['username'] + '.json'), 'w') as f:
+            with open(os.path.join(PREF_DIR, username + '.json'), 'w') as f:
                 text = json.dumps(pref, sort_keys=True, indent=4, separators=(',', ': '))
                 f.write(text)
-            log('Registered new preferences for user {}'.format(pref['username']))
+            log('Registered new preferences for user {}', username)
 
             session = {
                 'cookie': cookie,
@@ -90,8 +126,12 @@ class Preferences(Resource):
                 'username': username
             }
 
+            # Let the user know we've got their preferences
+            confirm_thread = threading.Thread(target=post_pref_confirmation, args=[session])
+            confirm_thread.start()
+
             # Make an order right away so the user gets some immediate feedback
-            order_thread = threading.Thread(target=force_order, args=[session])
+            order_thread = threading.Thread(target=post_pref_order, args=[session])
             order_thread.start()
 
             return True

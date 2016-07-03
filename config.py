@@ -4,6 +4,9 @@ import os
 
 _BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
+# Autowaiter settings
+BASE_URL = '127.0.0.1:5000'
+
 # Filesystem
 def guarantee_existence(dirs):
     '''
