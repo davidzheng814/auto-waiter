@@ -95,7 +95,7 @@ class http_error(Exception):
     def __init__(self, response):
         Exception.__init__(self, response.text)
         self.value = '{status} {message}'.format(
-            status=response.status_code, message=response.jsons().get('message'))
+            status=response.status_code, message=response.json().get('message'))
         self.response = response
 
     def __str__(self):
